@@ -32,6 +32,7 @@ import me.weishu.kernelsu.ui.component.dialog.rememberLoadingDialog
 import me.weishu.kernelsu.ui.navigation3.LocalNavigator
 import me.weishu.kernelsu.ui.navigation3.Route
 import me.weishu.kernelsu.ui.screen.flash.FlashIt
+import me.weishu.kernelsu.ui.util.BootInfoResult
 import me.weishu.kernelsu.ui.util.LkmSelection
 import me.weishu.kernelsu.ui.util.getAvailablePartitions
 import me.weishu.kernelsu.ui.util.getCurrentKmi
@@ -68,7 +69,7 @@ fun InstallScreen() {
     var forceBackup by rememberSaveable { mutableStateOf(false) }
 
     val currentKmi by produceState(initialValue = "") { value = getCurrentKmi() }
-    val partitions by produceState(initialValue = emptyList()) { value = getAvailablePartitions() }
+    val partitionProbe by produceState<BootInfoResult?>(initialValue = null) { value = getAvailablePartitions() }
     val defaultPartition by produceState(initialValue = "") { value = getDefaultPartition() }
     val rootAvailable by produceState(initialValue = false) { value = rootAvailable() }
     val isAbDevice by produceState(initialValue = false) { value = isAbDevice() }
@@ -89,7 +90,45 @@ fun InstallScreen() {
     }
 
     val isOta = installMethod is InstallMethod.DirectInstallToInactiveSlot
-    val slotSuffix by produceState(initialValue = "", isOta) { value = getSlotSuffix(isOta) }
+    val slotProbe by produceState<BootInfoResult?>(initialValue = null, isOta) { value = getSlotSuffix(isOta) }
+    val partitions = partitionProbe?.lines ?: emptyList()
+    val slotSuffix = slotProbe?.value.orEmpty()
+
+    val requiresTargetPartition = installMethod is InstallMethod.DirectInstall ||
+        installMethod is InstallMethod.DirectInstallToInactiveSlot
+    val installTarget = resolveInstallTarget(
+        requirePartition = requiresTargetPartition,
+        requireSlot = isOta,
+        partitions = partitions,
+        selectedIndex = partitionSelectionIndex,
+        partitionResult = partitionProbe,
+        slotResult = slotProbe,
+    )
+    val targetProblem = installTarget.problem?.let { problem ->
+        when (problem) {
+            is TargetProblem.PartitionCommandFailed -> resources.getString(
+                R.string.install_partition_probe_failed,
+                problem.exitCode,
+                problem.stderr.ifBlank { resources.getString(R.string.install_probe_no_output) },
+            )
+
+            is TargetProblem.NoPartitions -> resources.getString(
+                R.string.install_partition_probe_empty,
+                problem.slotSuffix.ifBlank { resources.getString(R.string.install_slot_suffix_unknown) },
+            )
+
+            TargetProblem.NoPartitionSelected -> resources.getString(R.string.install_partition_unresolved)
+
+            is TargetProblem.SlotCommandFailed -> resources.getString(
+                R.string.install_slot_probe_failed,
+                problem.exitCode,
+                problem.stderr.ifBlank { resources.getString(R.string.install_probe_no_output) },
+            )
+
+            TargetProblem.NoSlotResolved -> resources.getString(R.string.install_slot_unresolved)
+        }
+    }
+    val canProceed = installMethod != null && !installTarget.probing && installTarget.problem == null
     val defaultIndex = remember(partitions, defaultPartition) {
         partitions.indexOf(defaultPartition).coerceAtLeast(0)
     }
@@ -137,7 +176,7 @@ fun InstallScreen() {
                             boot = if (method is InstallMethod.SelectFile) method.uri else null,
                             lkm = lkmSelection,
                             ota = method is InstallMethod.DirectInstallToInactiveSlot,
-                            partition = partitions.getOrNull(partitionSelectionIndex),
+                            partition = installTarget.partition,
                             allowShell = allowShell,
                             enableAdb = enableAdb,
                             backup = method is InstallMethod.SelectFile && forceBackup
@@ -227,6 +266,9 @@ fun InstallScreen() {
         remotePartitionSelectionIndex = remotePartitionSelectionIndex,
         currentKmi = currentKmi,
         slotSuffix = slotSuffix,
+        targetPartition = installTarget.partition,
+        targetProblem = targetProblem,
+        canProceed = canProceed,
         installMethodOptions = installMethodOptions,
         canSelectPartition = installMethod is InstallMethod.DirectInstall ||
             installMethod is InstallMethod.DirectInstallToInactiveSlot ||
@@ -259,19 +301,23 @@ fun InstallScreen() {
             }
         },
         onNext = {
-            val isLkmSelected = lkmSelection != LkmSelection.KmiNone
-            val isKmiUnknown = currentKmi.isBlank()
-            val isKmiUnresolved = when (installMethod) {
-                // The download flow extracts the KMI itself; no manual
-                // selection needed.
-                is InstallMethod.DownloadFile -> false
-                is InstallMethod.SelectFile -> true
-                else -> isKmiUnknown
-            }
-            if (!isLkmSelected && isKmiUnresolved) {
-                showChooseKmiDialog.value = true
+            if (!canProceed) {
+                showMessage(targetProblem ?: resources.getString(R.string.install_partition_unresolved))
             } else {
-                onInstall()
+                val isLkmSelected = lkmSelection != LkmSelection.KmiNone
+                val isKmiUnknown = currentKmi.isBlank()
+                val isKmiUnresolved = when (installMethod) {
+                    // The download flow extracts the KMI itself; no manual
+                    // selection needed.
+                    is InstallMethod.DownloadFile -> false
+                    is InstallMethod.SelectFile -> true
+                    else -> isKmiUnknown
+                }
+                if (!isLkmSelected && isKmiUnresolved) {
+                    showChooseKmiDialog.value = true
+                } else {
+                    onInstall()
+                }
             }
         },
         onAdvancedOptionsClicked = {

@@ -45,6 +45,18 @@ data class FlashResult(val code: Int, val err: String, val showReboot: Boolean) 
     constructor(result: Shell.Result) : this(result, result.isSuccess)
 }
 
+data class BootInfoResult(
+    val lines: List<String>,
+    val code: Int,
+    val stderr: String,
+) {
+    val value: String
+        get() = lines.firstOrNull().orEmpty()
+
+    val isSuccess: Boolean
+        get() = code == 0
+}
+
 object KsuCli {
     val SHELL: Shell = createRootShell()
     val GLOBAL_MNT_SHELL: Shell = createRootShell(true)
@@ -533,21 +545,30 @@ suspend fun getDefaultPartition(): String = withContext(Dispatchers.IO) {
     }
 }
 
-suspend fun getSlotSuffix(ota: Boolean): String = withContext(Dispatchers.IO) {
-    val shell = getRootShell()
+suspend fun getSlotSuffix(ota: Boolean): BootInfoResult = withContext(Dispatchers.IO) {
     val cmd = if (ota) {
         "boot-info slot-suffix --ota"
     } else {
         "boot-info slot-suffix"
     }
-    ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim()
+    probeBootInfo(cmd)
 }
 
-suspend fun getAvailablePartitions(): List<String> = withContext(Dispatchers.IO) {
+suspend fun getAvailablePartitions(): BootInfoResult = withContext(Dispatchers.IO) {
+    probeBootInfo("boot-info available-partitions")
+}
+
+private fun probeBootInfo(cmd: String): BootInfoResult {
     val shell = getRootShell()
-    val cmd = "boot-info available-partitions"
-    val out = shell.newJob().add("${getKsuDaemonPath()} $cmd").to(ArrayList(), null).exec().out
-    out.filter { it.isNotBlank() }.map { it.trim() }
+    val result = shell.newJob()
+        .add("${getKsuDaemonPath()} $cmd")
+        .to(ArrayList<String>(), ArrayList<String>())
+        .exec()
+    return BootInfoResult(
+        lines = result.out.map { it.trim() }.filter { it.isNotEmpty() },
+        code = result.code,
+        stderr = result.err.joinToString("\n").trim(),
+    )
 }
 
 fun hasMagisk(): Boolean {

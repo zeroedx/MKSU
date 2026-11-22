@@ -163,6 +163,13 @@
     <string name="jailbreak_flash_warning_countdown">继续 (%1$d)</string>
     <string name="install_next">下一步</string>
     <string name="install_select_partition">选择分区</string>
+    <string name="install_partition_probe_failed">分区探测失败（退出码 %1$d）：%2$s</string>
+    <string name="install_partition_probe_empty">未探测到可安装分区（slot 后缀：%1$s）</string>
+    <string name="install_partition_unresolved">请选择明确的目标分区后再继续</string>
+    <string name="install_slot_probe_failed">槽位探测失败（退出码 %1$d）：%2$s</string>
+    <string name="install_slot_unresolved">无法确定目标槽位，已阻止安装到另一个槽位</string>
+    <string name="install_probe_no_output">无输出</string>
+    <string name="install_slot_suffix_unknown">未知</string>
     <string name="install_upload_lkm_file">使用本地 LKM 文件</string>
     <string name="install_only_support_ko_file">仅支持选择 .ko 文件</string>
     <string name="select_file_tip">建议选择 %1$s 分区镜像</string>
