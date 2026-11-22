@@ -75,6 +75,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
+import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -535,12 +536,13 @@ private fun InfoCard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        SmallTitle(text = stringResource(R.string.home_version_info))
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 InfoText(
-                    icon = Icons.Filled.Tag,
-                    title = stringResource(R.string.home_manager_version),
-                    content = systemInfo.managerVersion,
+                    icon = Icons.Filled.Smartphone,
+                    title = stringResource(R.string.home_device_model),
+                    content = systemInfo.deviceModel,
                 )
                 InfoText(
                     icon = Icons.Filled.DeveloperBoard,
@@ -548,9 +550,10 @@ private fun InfoCard(
                     content = systemInfo.kernelVersion,
                 )
                 InfoText(
-                    icon = Icons.Filled.Smartphone,
-                    title = stringResource(R.string.home_device_model),
-                    content = systemInfo.deviceModel,
+                    icon = Icons.Filled.Tag,
+                    title = stringResource(R.string.home_manager_version),
+                    content = systemInfo.managerVersion,
+                    bottomPadding = if (simpleMode) 0.dp else 24.dp,
                 )
                 if (!simpleMode) {
                     InfoText(
@@ -562,21 +565,21 @@ private fun InfoCard(
                 }
             }
         }
-        if (!simpleMode) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    InfoText(
-                        icon = Icons.Filled.Security,
-                        title = stringResource(R.string.home_selinux_status),
-                        content = selinuxDisplay,
-                    )
-                    InfoText(
-                        icon = Icons.Filled.FilterList,
-                        title = stringResource(R.string.home_seccomp_status),
-                        content = seccompDisplay,
-                        bottomPadding = 0.dp,
-                    )
-                }
+        // Status rows stay visible in simple mode and without an installation.
+        SmallTitle(text = stringResource(R.string.home_status_info))
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                InfoText(
+                    icon = Icons.Filled.Security,
+                    title = stringResource(R.string.home_selinux_status),
+                    content = selinuxDisplay,
+                )
+                InfoText(
+                    icon = Icons.Filled.FilterList,
+                    title = stringResource(R.string.home_seccomp_status),
+                    content = seccompDisplay,
+                    bottomPadding = 0.dp,
+                )
             }
         }
     }

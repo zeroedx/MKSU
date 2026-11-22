@@ -42,12 +42,24 @@ class HomeViewModel(
     private var refreshJob: Job? = null
     private var lastUpdateCheckAt = 0L
 
+    init {
+        // Simple mode is a pure display toggle: flip it from the preference so returning from
+        // theme settings is instant and no root probe is repeated.
+        viewModelScope.launch {
+            settingsRepo.simpleModeFlow.collect { enabled ->
+                _uiState.update { it.copy(simpleMode = enabled) }
+            }
+        }
+    }
+
     fun refresh() {
         // Activation and resume can both fire on the same return; keep one refresh in flight.
         if (refreshJob?.isActive == true) return
         refreshJob = viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState(probeShell = true) }
-            _uiState.update { baseState }
+            // The preference flow owns simpleMode; re-read it so a toggle made while the probe was
+            // running is not rolled back by the result.
+            _uiState.update { baseState.copy(simpleMode = settingsRepo.simpleMode) }
             if (!baseState.checkUpdateEnabled) return@launch
             // The GitHub call must not run on every tab switch; a stale result is good enough.
             val now = SystemClock.elapsedRealtime()

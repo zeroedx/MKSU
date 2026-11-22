@@ -2,12 +2,18 @@ package me.weishu.kernelsu.data.repository
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.edit
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.topjohnwu.superuser.ShellUtils
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
 import me.weishu.kernelsu.Natives
 import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.magica.BootCompletedReceiver
@@ -33,6 +39,7 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     private companion object {
         private const val INTENT_TOKEN_KEY = "intent_token"
+        private const val SIMPLE_MODE_KEY = "simple_mode"
         private val secureRandom = SecureRandom()
     }
 
@@ -129,8 +136,18 @@ class SettingsRepositoryImpl : SettingsRepository {
         set(value) = prefs.edit { putBoolean("show_more_module_info", value) }
 
     override var simpleMode: Boolean
-        get() = prefs.getBoolean("simple_mode", false)
-        set(value) = prefs.edit { putBoolean("simple_mode", value) }
+        get() = prefs.getBoolean(SIMPLE_MODE_KEY, false)
+        set(value) = prefs.edit { putBoolean(SIMPLE_MODE_KEY, value) }
+
+    override val simpleModeFlow: Flow<Boolean> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == SIMPLE_MODE_KEY) trySend(prefs.getBoolean(SIMPLE_MODE_KEY, false))
+        }
+        // The listener must stay strongly reachable: SharedPreferences only holds it weakly.
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(prefs.getBoolean(SIMPLE_MODE_KEY, false))
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
 
     override var predictiveBackAnimation: String
         get() = prefs.getString("predictive_back_animation", "default") ?: "default"

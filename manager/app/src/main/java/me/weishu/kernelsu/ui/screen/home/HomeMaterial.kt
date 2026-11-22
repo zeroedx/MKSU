@@ -435,12 +435,15 @@ private fun InfoCard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
-        SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+        SegmentedColumn(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(R.string.home_version_info),
+        ) {
             item {
                 InfoCardItem(
-                    icon = Icons.Filled.Tag,
-                    label = stringResource(R.string.home_manager_version),
-                    content = systemInfo.managerVersion,
+                    icon = Icons.Filled.Smartphone,
+                    label = stringResource(R.string.home_device_model),
+                    content = systemInfo.deviceModel,
                 )
             }
             item {
@@ -452,9 +455,9 @@ private fun InfoCard(
             }
             item {
                 InfoCardItem(
-                    icon = Icons.Filled.Smartphone,
-                    label = stringResource(R.string.home_device_model),
-                    content = systemInfo.deviceModel,
+                    icon = Icons.Filled.Tag,
+                    label = stringResource(R.string.home_manager_version),
+                    content = systemInfo.managerVersion,
                 )
             }
             if (!simpleMode) {
@@ -467,22 +470,24 @@ private fun InfoCard(
                 }
             }
         }
-        if (!simpleMode) {
-            SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
-                item {
-                    InfoCardItem(
-                        icon = Icons.Filled.Security,
-                        label = stringResource(R.string.home_selinux_status),
-                        content = selinuxDisplay,
-                    )
-                }
-                item {
-                    InfoCardItem(
-                        icon = Icons.Filled.FilterList,
-                        label = stringResource(R.string.home_seccomp_status),
-                        content = seccompDisplay,
-                    )
-                }
+        // Status rows stay visible in simple mode and without an installation.
+        SegmentedColumn(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(R.string.home_status_info),
+        ) {
+            item {
+                InfoCardItem(
+                    icon = Icons.Filled.Security,
+                    label = stringResource(R.string.home_selinux_status),
+                    content = selinuxDisplay,
+                )
+            }
+            item {
+                InfoCardItem(
+                    icon = Icons.Filled.FilterList,
+                    label = stringResource(R.string.home_seccomp_status),
+                    content = seccompDisplay,
+                )
             }
         }
     }

@@ -1,5 +1,6 @@
 package me.weishu.kernelsu.data.repository
 
+import kotlinx.coroutines.flow.Flow
 import me.weishu.kernelsu.ui.util.FeatureSnapshot
 
 interface SettingsRepository {
@@ -37,6 +38,9 @@ interface SettingsRepository {
     var autoJailbreak: Boolean
     var useSoftReboot: Boolean
     val intentToken: String
+
+    /** Emits the current value and every later change, so screens react without a refresh. */
+    val simpleModeFlow: Flow<Boolean>
 
     suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot>
 
