@@ -56,6 +56,9 @@ fun ColorPaletteScreen() {
             KernelSUApplication.setEnableOnBackInvokedCallback(context.applicationInfo, it)
             activity?.recreate()
         },
+        onSetPredictiveBackAnimation = viewModel::setPredictiveBackAnimation,
+        onSetShowMoreModuleInfo = viewModel::setShowMoreModuleInfo,
+        onSetSimpleMode = viewModel::setSimpleMode,
         onSetEnableSwipeDismiss = viewModel::setEnableSwipeDismiss,
         onSetPagerInterceptionMode = viewModel::setPagerInterceptionMode,
         onSetPageScale = viewModel::setPageScale,

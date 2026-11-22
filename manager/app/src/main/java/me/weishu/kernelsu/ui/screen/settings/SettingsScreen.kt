@@ -45,10 +45,6 @@ fun SettingPager(
     val actions = SettingsScreenActions(
         onSetCheckUpdate = viewModel::setCheckUpdate,
         onSetCheckModuleUpdate = viewModel::setCheckModuleUpdate,
-        onSetShowMoreModuleInfo = viewModel::setShowMoreModuleInfo,
-        onSetSimpleMode = viewModel::setSimpleMode,
-        onSetEnablePredictiveBack = viewModel::setEnablePredictiveBack,
-        onSetPredictiveBackAnimation = viewModel::setPredictiveBackAnimation,
         onOpenTheme = { navigator.push(Route.ColorPalette) },
         onSetUiModeIndex = { index ->
             viewModel.setUiMode(if (index == 0) UiMode.Miuix.value else UiMode.Material.value)

@@ -29,14 +29,11 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LayersClear
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material.icons.rounded.Animation
-import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -83,19 +80,6 @@ fun SettingPagerMaterial(
     val snackBarHost = remember { SnackbarHostState() }
     val showUninstallDialog = rememberSaveable { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
-    val predictiveBackItems = listOf(
-        stringResource(R.string.settings_predictive_back_default),
-        stringResource(R.string.settings_predictive_back_scale),
-        stringResource(R.string.settings_predictive_back_slide),
-        stringResource(R.string.settings_predictive_back_none),
-    )
-    val predictiveBackIndex = when (uiState.predictiveBackAnimation) {
-        "scale" -> 1
-        "slide" -> 2
-        "none" -> 3
-        else -> 0
-    }
-
     UninstallDialog(
         show = showUninstallDialog.value,
         onDismissRequest = { showUninstallDialog.value = false }
@@ -342,53 +326,6 @@ fun SettingPagerMaterial(
                                 onCheckedChange = actions.onSetAutoJailbreak
                             )
                         },
-                        {
-                            SegmentedSwitchItem(
-                                icon = Icons.Filled.Info,
-                                title = stringResource(id = R.string.settings_show_more_module_info),
-                                summary = stringResource(id = R.string.settings_show_more_module_info_summary),
-                                checked = uiState.showMoreModuleInfo,
-                                onCheckedChange = actions.onSetShowMoreModuleInfo
-                            )
-                        },
-                        {
-                            SegmentedSwitchItem(
-                                icon = Icons.Rounded.Dashboard,
-                                title = stringResource(id = R.string.settings_simple_mode),
-                                summary = stringResource(id = R.string.settings_simple_mode_summary),
-                                checked = uiState.simpleMode,
-                                onCheckedChange = actions.onSetSimpleMode
-                            )
-                        },
-                        {
-                            SegmentedSwitchItem(
-                                icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                                title = stringResource(id = R.string.settings_enable_predictive_back),
-                                summary = stringResource(id = R.string.settings_enable_predictive_back_summary),
-                                checked = uiState.enablePredictiveBack,
-                                onCheckedChange = actions.onSetEnablePredictiveBack
-                            )
-                        },
-                        {
-                            SegmentedDropdownItem(
-                                icon = Icons.Rounded.Animation,
-                                title = stringResource(id = R.string.settings_predictive_back_animation),
-                                summary = stringResource(id = R.string.settings_predictive_back_animation_summary),
-                                items = predictiveBackItems,
-                                enabled = uiState.enablePredictiveBack,
-                                selectedIndex = predictiveBackIndex,
-                                onItemSelected = { index ->
-                                    actions.onSetPredictiveBackAnimation(
-                                        when (index) {
-                                            1 -> "scale"
-                                            2 -> "slide"
-                                            3 -> "none"
-                                            else -> "default"
-                                        }
-                                    )
-                                }
-                            )
-                        }
                     )
                 )
             }

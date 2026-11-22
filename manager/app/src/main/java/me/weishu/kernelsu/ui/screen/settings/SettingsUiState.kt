@@ -71,10 +71,6 @@ data class SettingsUiState(
 data class SettingsScreenActions(
     val onSetCheckUpdate: (Boolean) -> Unit,
     val onSetCheckModuleUpdate: (Boolean) -> Unit,
-    val onSetShowMoreModuleInfo: (Boolean) -> Unit,
-    val onSetSimpleMode: (Boolean) -> Unit,
-    val onSetEnablePredictiveBack: (Boolean) -> Unit,
-    val onSetPredictiveBackAnimation: (String) -> Unit,
     val onOpenTheme: () -> Unit,
     val onSetUiModeIndex: (Int) -> Unit,
     val onOpenProfileTemplate: () -> Unit,

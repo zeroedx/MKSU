@@ -145,8 +145,66 @@ private suspend fun readFeatureValue(args: String): Long? = withContext(Dispatch
     val shell = getRootShell()
     val out = shell.newJob()
         .add("${getKsuDaemonPath()} feature get $args").to(ArrayList<String>(), null).exec().out
-    val valueLine = out.firstOrNull { it.trim().startsWith("Value:") } ?: return@withContext null
-    valueLine.substringAfter("Value:").trim().toLongOrNull()
+    parseFeatureValue(out)
+}
+
+internal fun parseFeatureValue(out: List<String>): Long? {
+    val valueLine = out.firstOrNull { it.trim().startsWith("Value:") } ?: return null
+    return valueLine.substringAfter("Value:").trim().toLongOrNull()
+}
+
+data class FeatureSnapshot(
+    val status: String,
+    val persistedValue: Long?,
+    val currentValue: Long?,
+)
+
+private const val FEATURE_SNAPSHOT_MARKER = "@@@KSU-FEATURE-SNAPSHOT@@@"
+
+/**
+ * Reads status, persisted value and current value for several features in a single root shell job.
+ * Every `ksud` invocation is a fork/exec; one job per value made the settings page issue ten of them
+ * and take several hundred milliseconds to populate.
+ */
+suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot> =
+    withContext(Dispatchers.IO) {
+        if (features.isEmpty()) return@withContext emptyMap()
+        val daemon = getKsuDaemonPath()
+        val job = getRootShell().newJob()
+        features.forEach { feature ->
+            job.add("$daemon feature check $feature")
+            job.add("echo $FEATURE_SNAPSHOT_MARKER")
+            job.add("$daemon feature get --config $feature")
+            job.add("echo $FEATURE_SNAPSHOT_MARKER")
+            job.add("$daemon feature get $feature")
+            job.add("echo $FEATURE_SNAPSHOT_MARKER")
+        }
+        val out = job.to(ArrayList<String>(), null).exec().out
+        parseFeatureSnapshots(features, out)
+    }
+
+internal fun parseFeatureSnapshots(
+    features: List<String>,
+    out: List<String>,
+): Map<String, FeatureSnapshot> {
+    val chunks = mutableListOf<MutableList<String>>()
+    chunks.add(mutableListOf())
+    out.forEach { line ->
+        if (line.trim() == FEATURE_SNAPSHOT_MARKER) {
+            chunks.add(mutableListOf())
+        } else {
+            chunks.last().add(line)
+        }
+    }
+    return features.mapIndexedNotNull { index, feature ->
+        val base = index * 3
+        if (chunks.size <= base + 2) return@mapIndexedNotNull null
+        feature to FeatureSnapshot(
+            status = chunks[base].firstOrNull()?.trim().orEmpty(),
+            persistedValue = parseFeatureValue(chunks[base + 1]),
+            currentValue = parseFeatureValue(chunks[base + 2]),
+        )
+    }.toMap()
 }
 
 fun install() {

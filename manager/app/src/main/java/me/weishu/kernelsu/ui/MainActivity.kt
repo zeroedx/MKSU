@@ -32,6 +32,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -113,7 +114,7 @@ import top.yukonga.miuix.kmp.nav.core.NavDisplay
 import top.yukonga.miuix.kmp.nav.core.NavDisplayEffects
 import top.yukonga.miuix.kmp.nav.core.rememberNavSystemCornerRadius
 import top.yukonga.miuix.kmp.nav.transition.NavSwipeDirection
-import top.yukonga.miuix.kmp.nav.transition.NavTransitions
+import me.weishu.kernelsu.ui.animation.predictiveback.navTransitionFor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PagerGestureNestedScrollConnection
 import top.yukonga.miuix.kmp.utils.PagerInterceptionMode
@@ -155,7 +156,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel = viewModel<MainActivityViewModel>()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val selectedMainPage by viewModel.selectedMainPage.collectAsStateWithLifecycle()
+            // Read once without collecting: the pager owns its page state, and collecting here
+            // would recompose the whole app tree on every settle.
+            @Suppress("StateFlowValueCalledInComposition")
+            val initialMainPage = viewModel.selectedMainPage.value
             val appSettings = uiState.appSettings
             val uiMode = uiState.uiMode
             val darkMode = appSettings.colorMode.isDark || (appSettings.colorMode.isSystem && isSystemInDarkTheme())
@@ -214,16 +218,11 @@ class MainActivity : ComponentActivity() {
                     } else {
                         NavSwipeDirection.None
                     }
-                    // The predictive-back style setting selects the miuix nav transition used while
-                    // swiping back; "scale"/"slide" map onto the closest built-in transition.
-                    val navTransition = remember(uiState.enablePredictiveBack, uiState.predictiveBackAnimation) {
-                        when {
-                            !uiState.enablePredictiveBack || uiState.predictiveBackAnimation == "none" ->
-                                NavTransitions.None
-
-                            uiState.predictiveBackAnimation == "scale" -> NavTransitions.Modal
-                            else -> NavTransitions.MiuixDefault
-                        }
+                    // Only the animation style picks the transition. The predictive-back switch is a
+                    // manifest flag for the system gesture, and must not turn regular back into an
+                    // instant jump.
+                    val navTransition = remember(uiState.predictiveBackAnimation) {
+                        navTransitionFor(uiState.predictiveBackAnimation)
                     }
                     val flashRoute = navigator.current() as? Route.Flash
                     var flashBackEnabled by remember(flashRoute) { mutableStateOf(false) }
@@ -234,7 +233,7 @@ class MainActivity : ComponentActivity() {
                     val scriptRunSwipeDismiss = if (scriptRunBackEnabled) swipeDismiss else NavSwipeDirection.None
                     val mainScreenEntry = @Composable {
                         MainScreen(
-                            initialPage = selectedMainPage,
+                            initialPage = initialMainPage,
                             pagerInterceptionMode = uiState.pagerInterceptionMode,
                             onPageChanged = viewModel::setSelectedMainPage,
                         )
@@ -346,14 +345,7 @@ fun MainScreen(
     val enableNavigationBadge = LocalEnableNavigationBadge.current
     val badgeEnabled = enableNavigationBadge && isFullFeatured
     val moduleViewModel = viewModel<ModuleViewModel>()
-    val moduleUiState by moduleViewModel.uiState.collectAsStateWithLifecycle()
-
     val superUserViewModel = viewModel<SuperUserViewModel>()
-    val grantedUidCount by remember(superUserViewModel) {
-        superUserViewModel.uiState
-            .map { state -> state.groupedApps.count { it.anyAllowSu } }
-            .distinctUntilChanged()
-    }.collectAsStateWithLifecycle(0)
 
     var startupPreloadStarted by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(isFullFeatured) {
@@ -382,21 +374,11 @@ fun MainScreen(
         startupPreloadStarted = true
     }
 
-    // Loading the app list just for a badge is too expensive; read the kernel allowlist instead.
-    var superuserCount by remember { mutableIntStateOf(0) }
-    LaunchedEffect(badgeEnabled, grantedUidCount) {
-        superuserCount = if (badgeEnabled) withContext(Dispatchers.IO) { getSuperuserCount() } else 0
-    }
-
-    val navigationBadge = if (badgeEnabled) {
-        NavigationBadgeState(
-            superuserCount = superuserCount,
-            moduleEnabledCount = moduleUiState.modules.count { it.enabled },
-            moduleUpdatableCount = moduleUiState.updateInfo.count { it.value.downloadUrl.isNotBlank() },
-        )
-    } else {
-        NavigationBadgeState()
-    }
+    val navigationBadge by rememberNavigationBadgeState(
+        moduleViewModel = moduleViewModel,
+        superUserViewModel = superUserViewModel,
+        enabled = badgeEnabled,
+    )
     val uiMode = LocalUiMode.current
     val surfaceColor = when (uiMode) {
         UiMode.Material -> MaterialTheme.colorScheme.surface // Blur is not used in Material, this is just a placeholder
@@ -438,7 +420,7 @@ fun MainScreen(
                     state = mainPagerState.pagerState,
                     beyondViewportPageCount = if (contentReady) 3 else 0,
                     overscrollEffect = null,
-                    userScrollEnabled = userScrollEnabled && !interceptPagerGestures,
+                    userScrollEnabled = userScrollEnabled && !interceptPagerGestures && !mainPagerState.isNavigating,
                     pageNestedScrollConnection = if (interceptPagerGestures) {
                         PagerGestureNestedScrollConnection
                     } else {
@@ -527,6 +509,46 @@ fun MainScreen(
     }
 }
 
+
+// Module and app-list state change on every toggle. A derived state keeps those reads out of
+// MainScreen's scope, so the pager and its pages only recompose when a badge count actually changes.
+@Composable
+private fun rememberNavigationBadgeState(
+    moduleViewModel: ModuleViewModel,
+    superUserViewModel: SuperUserViewModel,
+    enabled: Boolean,
+): State<NavigationBadgeState> {
+    val moduleUiState by moduleViewModel.uiState.collectAsStateWithLifecycle()
+    val grantedUidCount by remember(superUserViewModel) {
+        superUserViewModel.uiState
+            .map { state -> state.groupedApps.count { it.anyAllowSu } }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(0)
+
+    // Loading the app list just for a badge is too expensive; read the kernel allowlist instead.
+    val superuserCount = remember { mutableIntStateOf(0) }
+    LaunchedEffect(grantedUidCount, enabled) {
+        superuserCount.intValue = if (enabled) {
+            withContext(Dispatchers.IO) { getSuperuserCount() }
+        } else {
+            0
+        }
+    }
+
+    return remember(enabled) {
+        derivedStateOf {
+            if (!enabled) {
+                NavigationBadgeState()
+            } else {
+                NavigationBadgeState(
+                    superuserCount = superuserCount.intValue,
+                    moduleEnabledCount = moduleUiState.modules.count { it.enabled },
+                    moduleUpdatableCount = moduleUiState.updateInfo.count { it.value.downloadUrl.isNotBlank() },
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun MainScreenBackHandler(

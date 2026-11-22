@@ -155,7 +155,7 @@
     <string name="settings_check_update">检查更新</string>
     <string name="settings_check_update_summary">在应用启动后自动检查是否有最新版</string>
     <string name="settings_enable_predictive_back">预测性返回手势</string>
-    <string name="settings_enable_predictive_back_summary">启用对预测性返回手势的支持</string>
+    <string name="settings_enable_predictive_back_summary">启用系统预测性返回手势；下方的动画样式始终生效</string>
     <string name="settings_enable_swipe_dismiss">横移返回手势</string>
     <string name="settings_enable_swipe_dismiss_summary">从屏幕边缘横移返回上一页</string>
     <string name="settings_pager_gesture_mode">页面切换手势</string>
@@ -374,18 +374,21 @@
     <string name="module_repos_sort_created">创建时间</string>
     <string name="module_id">模块 ID</string>
     <string name="module_update_json">更新 JSON</string>
+    <string name="module_update_json_copied">已复制更新配置 URL</string>
     <string name="about_upstream"><![CDATA[上游项目：<b><a href="https://github.com/tiann/KernelSU">KernelSU</a></b>]]></string>
     <string name="uapi_mismatch">管理器 uapi 版本 (%1$d) 与 MKSU 驱动 uapi 版本 (%2$d) 不匹配！</string>
     <string name="settings_predictive_back_animation">预测性返回动画样式</string>
-    <string name="settings_predictive_back_animation_summary">选择滑动返回时页面的过渡方式</string>
+    <string name="settings_predictive_back_animation_summary">选择页面切换（含返回手势）使用的动画</string>
     <string name="settings_predictive_back_default">系统默认</string>
+    <string name="settings_predictive_back_aosp">AOSP</string>
     <string name="settings_predictive_back_scale">缩放</string>
+    <string name="settings_predictive_back_classic">经典</string>
     <string name="settings_predictive_back_slide">滑动</string>
-    <string name="settings_predictive_back_none">无动画</string>
+    <string name="settings_predictive_back_none">无预测动画</string>
     <string name="settings_show_more_module_info">显示更多模块信息</string>
     <string name="settings_show_more_module_info_summary">在模块列表中显示模块 ID 和更新 JSON</string>
     <string name="settings_simple_mode">简洁模式</string>
-    <string name="settings_simple_mode_summary">隐藏主页上的可选卡片</string>
+    <string name="settings_simple_mode_summary">首页保留状态、设备型号、内核和管理器版本，收起其余次要信息</string>
     <string name="install_partition_probe_failed">分区探测失败（退出码 %1$d）：%2$s</string>
     <string name="install_partition_probe_empty">未探测到可安装分区（slot 后缀：%1$s）</string>
     <string name="install_partition_unresolved">请选择明确的目标分区后再继续</string>

@@ -34,12 +34,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuOpen
+import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.CallToAction
 import androidx.compose.material.icons.rounded.Colorize
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DesignServices
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Pin
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material.icons.rounded.Wallpaper
@@ -71,6 +74,8 @@ import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import me.weishu.kernelsu.R
+import me.weishu.kernelsu.ui.animation.predictiveback.predictiveBackAnimationIndex
+import me.weishu.kernelsu.ui.animation.predictiveback.predictiveBackAnimationValue
 import me.weishu.kernelsu.ui.component.bottombar.useNavigationRail
 import me.weishu.kernelsu.ui.component.miuix.ScaleDialog
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
@@ -111,6 +116,14 @@ fun ColorPaletteScreenMiuix(
     val uiState = state.uiState
     val currentColorMode = state.currentColorMode
     val isDark = currentColorMode.isDark || currentColorMode.isSystem && isSystemInDarkTheme()
+    val predictiveBackAnimationItems = listOf(
+        stringResource(R.string.settings_predictive_back_default),
+        stringResource(R.string.settings_predictive_back_aosp),
+        stringResource(R.string.settings_predictive_back_scale),
+        stringResource(R.string.settings_predictive_back_classic),
+        stringResource(R.string.settings_predictive_back_none),
+    )
+    val predictiveBackSelectedIndex = predictiveBackAnimationIndex(uiState.predictiveBackAnimation)
 
     Scaffold(
         topBar = {
@@ -365,6 +378,41 @@ fun ColorPaletteScreenMiuix(
                             .padding(top = 12.dp)
                             .fillMaxWidth(),
                     ) {
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_show_more_module_info),
+                            summary = stringResource(id = R.string.settings_show_more_module_info_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Info,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_show_more_module_info),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.showMoreModuleInfo,
+                            onCheckedChange = actions.onSetShowMoreModuleInfo
+                        )
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_simple_mode),
+                            summary = stringResource(id = R.string.settings_simple_mode_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Dashboard,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_simple_mode),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.simpleMode,
+                            onCheckedChange = actions.onSetSimpleMode
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             SwitchPreference(
                                 title = stringResource(id = R.string.settings_enable_predictive_back),
@@ -380,6 +428,25 @@ fun ColorPaletteScreenMiuix(
                                 checked = uiState.enablePredictiveBack,
                                 onCheckedChange = {
                                     actions.onSetEnablePredictiveBack(it)
+                                }
+                            )
+                            OverlayDropdownPreference(
+                                title = stringResource(id = R.string.settings_predictive_back_animation),
+                                summary = stringResource(id = R.string.settings_predictive_back_animation_summary),
+                                items = predictiveBackAnimationItems,
+                                startAction = {
+                                    Icon(
+                                        Icons.Rounded.Animation,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                        contentDescription = stringResource(id = R.string.settings_predictive_back_animation),
+                                        tint = colorScheme.onBackground
+                                    )
+                                },
+                                selectedIndex = predictiveBackSelectedIndex,
+                                onSelectedIndexChange = { index ->
+                                    actions.onSetPredictiveBackAnimation(
+                                        predictiveBackAnimationValue(index)
+                                    )
                                 }
                             )
                         }

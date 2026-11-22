@@ -1,5 +1,7 @@
 package me.weishu.kernelsu.data.repository
 
+import me.weishu.kernelsu.ui.util.FeatureSnapshot
+
 interface SettingsRepository {
     var uiMode: String
     var checkUpdate: Boolean
@@ -35,6 +37,8 @@ interface SettingsRepository {
     var autoJailbreak: Boolean
     var useSoftReboot: Boolean
     val intentToken: String
+
+    suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot>
 
     suspend fun getSuCompatStatus(): String
     suspend fun getSuCompatPersistValue(): Long?

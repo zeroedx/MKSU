@@ -1,10 +1,12 @@
 package me.weishu.kernelsu.ui.viewmodel
 
 import android.os.Build
+import android.os.SystemClock
 import android.system.Os
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,32 +28,45 @@ import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import me.weishu.kernelsu.ui.util.resolveDeviceName
 import me.weishu.kernelsu.ui.util.rootAvailable
 
+private const val UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000L
+
 class HomeViewModel(
     private val settingsRepo: SettingsRepository = SettingsRepositoryImpl()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(buildState())
+    // The constructor runs on the main thread; acquiring the root shell and forking a shell for
+    // `getenforce` must not happen here. Show a cheap state first and fill in the probes on IO.
+    private val _uiState = MutableStateFlow(buildState(probeShell = false))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var refreshJob: Job? = null
+    private var lastUpdateCheckAt = 0L
+
     fun refresh() {
-        viewModelScope.launch {
-            val baseState = withContext(Dispatchers.IO) { buildState() }
+        // Activation and resume can both fire on the same return; keep one refresh in flight.
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
+            val baseState = withContext(Dispatchers.IO) { buildState(probeShell = true) }
             _uiState.update { baseState }
-            if (baseState.checkUpdateEnabled) {
-                val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
-                _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
-            }
+            if (!baseState.checkUpdateEnabled) return@launch
+            // The GitHub call must not run on every tab switch; a stale result is good enough.
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastUpdateCheckAt < UPDATE_CHECK_INTERVAL_MS) return@launch
+            lastUpdateCheckAt = now
+            val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
+            _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
         }
     }
 
-    private fun buildState(): HomeUiState {
+    private fun buildState(probeShell: Boolean): HomeUiState {
         val kernelVersion = getKernelVersion()
         val isManager = Natives.isManager
         val ksuVersion = if (isManager) Natives.version else null
         val kernelUAPIVersion = if (isManager) Natives.kernelUAPIVersion else null
         val managerUAPIVersion = Natives.managerUAPIVersion
         val lkmMode = ksuVersion?.let { if (kernelVersion.isGKI()) Natives.isLkmMode else null }
-        val isRootAvailable = rootAvailable()
+        // Optimistic until the real value arrives: avoids flashing the "root unavailable" warning.
+        val isRootAvailable = if (probeShell) rootAvailable() else true
         val managerVersion = getManagerVersion(ksuApp)
 
         return HomeUiState(
@@ -78,7 +93,7 @@ class HomeViewModel(
                 managerVersion = "${managerVersion.versionName} (${managerVersion.versionCode}-${managerUAPIVersion})",
                 deviceModel = resolveDeviceName(),
                 fingerprint = Build.FINGERPRINT,
-                selinuxStatus = getSELinuxStatusRaw(),
+                selinuxStatus = if (probeShell) getSELinuxStatusRaw() else "",
                 seccompStatus = runCatching {
                     Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0)
                 }.getOrDefault(-1),

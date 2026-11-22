@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,8 +31,13 @@ class SettingsViewModel(
         refresh()
     }
 
+    private var refreshJob: Job? = null
+
     fun refresh() {
-        viewModelScope.launch {
+        // Entering the tab used to start a second refresh on top of the one started by init.
+        // Feature probes are shell round trips, so drop duplicates instead of queuing them.
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch(Dispatchers.IO) {
             val checkUpdate = repo.checkUpdate
             val checkModuleUpdate = repo.checkModuleUpdate
             val themeMode = repo.themeMode
@@ -54,40 +60,42 @@ class SettingsViewModel(
             val colorSpec = repo.colorSpec
             val isLkmMode = repo.isLkmMode()
 
-            // Async loading for natives/features
-            val suCompatStatus = repo.getSuCompatStatus()
-            val suCompatPersistValue = repo.getSuCompatPersistValue()
-            val isSuEnabled = repo.isSuEnabled()
+            // One root shell job for all feature probes; the values are also used by the toggles.
+            val features = repo.getFeatureSnapshots(FEATURE_KEYS)
+            fun status(key: String) = features[key]?.status.orEmpty()
+            fun persisted(key: String) = features[key]?.persistedValue
+            fun current(key: String) = features[key]?.currentValue
 
-            // Forced features show the value in effect, the persisted one is ignored
+            val suCompatStatus = status(KEY_SU_COMPAT)
+            val isSuEnabled = repo.isSuEnabled()
             val suCompatMode = when {
                 suCompatStatus == "forced" -> if (isSuEnabled) 0 else 2
-                suCompatPersistValue == 0L -> 2
+                persisted(KEY_SU_COMPAT) == 0L -> 2
                 !isSuEnabled -> 1
                 else -> 0
             }
 
-            val kernelUmountStatus = repo.getKernelUmountStatus()
+            val kernelUmountStatus = status(KEY_KERNEL_UMOUNT)
             val isKernelUmountEnabled = repo.isKernelUmountEnabled()
-            val selinuxHideStatus = repo.getSelinuxHideStatus()
+            val selinuxHideStatus = status(KEY_SELINUX_HIDE)
             val isSelinuxHideEnabled = repo.isSelinuxHideEnabled()
-            val sulogStatus = repo.getSulogStatus()
+            val sulogStatus = status(KEY_SULOG)
             val isSulogEnabled = if (sulogStatus == "forced") {
-                repo.getSulogValue() == 1L
+                current(KEY_SULOG) == 1L
             } else {
-                repo.getSulogPersistValue() == 1L
+                persisted(KEY_SULOG) == 1L
             }
-            val adbRootStatus = repo.getAdbRootStatus()
+            val adbRootStatus = status(KEY_ADB_ROOT)
             val isAdbRootEnabled = if (adbRootStatus == "forced") {
-                repo.getAdbRootValue() == 1L
+                current(KEY_ADB_ROOT) == 1L
             } else {
-                repo.getAdbRootPersistValue() == 1L
+                persisted(KEY_ADB_ROOT) == 1L
             }
-            val shellSuAdbOnlyStatus = repo.getShellSuAdbOnlyStatus()
+            val shellSuAdbOnlyStatus = status(KEY_SHELL_SU_ADB_ONLY)
             val isShellSuAdbOnlyEnabled = if (shellSuAdbOnlyStatus == "forced") {
-                repo.getShellSuAdbOnlyValue() == 1L
+                current(KEY_SHELL_SU_ADB_ONLY) == 1L
             } else {
-                repo.getShellSuAdbOnlyPersistValue() == 1L
+                persisted(KEY_SHELL_SU_ADB_ONLY) == 1L
             }
             val isDefaultUmountModules = repo.isDefaultUmountModules()
             val uiMode = repo.uiMode
@@ -393,5 +401,23 @@ class SettingsViewModel(
                 _uiState.update { it.copy(isDefaultUmountModules = enabled) }
             }
         }
+    }
+
+    private companion object {
+        const val KEY_SU_COMPAT = "su_compat"
+        const val KEY_KERNEL_UMOUNT = "kernel_umount"
+        const val KEY_SELINUX_HIDE = "selinux_hide"
+        const val KEY_SULOG = "sulog"
+        const val KEY_ADB_ROOT = "adb_root"
+        const val KEY_SHELL_SU_ADB_ONLY = "shell_su_adb_only"
+
+        val FEATURE_KEYS = listOf(
+            KEY_SU_COMPAT,
+            KEY_KERNEL_UMOUNT,
+            KEY_SELINUX_HIDE,
+            KEY_SULOG,
+            KEY_ADB_ROOT,
+            KEY_SHELL_SU_ADB_ONLY,
+        )
     }
 }

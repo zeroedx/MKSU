@@ -167,11 +167,12 @@ fun HomePagerMiuix(
                             state = state,
                             actions = actions,
                         )
+                        InfoCard(
+                            systemInfo = state.systemInfo,
+                            simpleMode = state.simpleMode,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                         if (!state.simpleMode) {
-                            InfoCard(
-                                systemInfo = state.systemInfo,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
                             SupportLinks(
                                 onOpenUrl = actions.onOpenUrl,
                                 modifier = Modifier.fillMaxWidth(),
@@ -475,6 +476,7 @@ private fun SupportLinks(
 @Composable
 private fun InfoCard(
     systemInfo: SystemInfo,
+    simpleMode: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     @Composable
@@ -550,27 +552,31 @@ private fun InfoCard(
                     title = stringResource(R.string.home_device_model),
                     content = systemInfo.deviceModel,
                 )
-                InfoText(
-                    icon = Icons.Filled.Fingerprint,
-                    title = stringResource(R.string.home_fingerprint),
-                    content = systemInfo.fingerprint,
-                    bottomPadding = 0.dp,
-                )
+                if (!simpleMode) {
+                    InfoText(
+                        icon = Icons.Filled.Fingerprint,
+                        title = stringResource(R.string.home_fingerprint),
+                        content = systemInfo.fingerprint,
+                        bottomPadding = 0.dp,
+                    )
+                }
             }
         }
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                InfoText(
-                    icon = Icons.Filled.Security,
-                    title = stringResource(R.string.home_selinux_status),
-                    content = selinuxDisplay,
-                )
-                InfoText(
-                    icon = Icons.Filled.FilterList,
-                    title = stringResource(R.string.home_seccomp_status),
-                    content = seccompDisplay,
-                    bottomPadding = 0.dp,
-                )
+        if (!simpleMode) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    InfoText(
+                        icon = Icons.Filled.Security,
+                        title = stringResource(R.string.home_selinux_status),
+                        content = selinuxDisplay,
+                    )
+                    InfoText(
+                        icon = Icons.Filled.FilterList,
+                        title = stringResource(R.string.home_seccomp_status),
+                        content = seccompDisplay,
+                        bottomPadding = 0.dp,
+                    )
+                }
             }
         }
     }

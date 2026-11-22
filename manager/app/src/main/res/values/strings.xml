@@ -170,7 +170,7 @@
     <string name="settings_check_update">Check for updates</string>
     <string name="settings_check_update_summary">Automatically check for updates when opening the app.</string>
     <string name="settings_enable_predictive_back">Predictive back gesture</string>
-    <string name="settings_enable_predictive_back_summary">Enable predictive back gesture support.</string>
+    <string name="settings_enable_predictive_back_summary">Enable the system predictive back gesture. The animation style below applies either way.</string>
     <string name="settings_enable_swipe_dismiss">Swipe back gesture</string>
     <string name="settings_enable_swipe_dismiss_summary">Swipe from the edge to return to the previous page.</string>
     <string name="settings_pager_gesture_mode">Pager gesture mode</string>
@@ -386,18 +386,21 @@
     <string name="module_repos_sort_created">Created time</string>
     <string name="module_id">Module ID</string>
     <string name="module_update_json">Update JSON</string>
+    <string name="module_update_json_copied">Update JSON URL copied</string>
     <string name="about_upstream"><![CDATA[Upstream project: <b><a href="https://github.com/tiann/KernelSU">KernelSU</a></b>]]></string>
     <string name="uapi_mismatch">Manager uapi version (%1$d) and MKSU driver uapi version (%2$d) mismatch.</string>
     <string name="settings_predictive_back_animation">Predictive back animation style</string>
-    <string name="settings_predictive_back_animation_summary">Choose how pages move when you swipe back.</string>
+    <string name="settings_predictive_back_animation_summary">Choose the animation used for page transitions, including back gestures.</string>
     <string name="settings_predictive_back_default">System default</string>
+    <string name="settings_predictive_back_aosp">AOSP</string>
     <string name="settings_predictive_back_scale">Scale</string>
+    <string name="settings_predictive_back_classic">Classic</string>
     <string name="settings_predictive_back_slide">Slide</string>
-    <string name="settings_predictive_back_none">None</string>
+    <string name="settings_predictive_back_none">No predictive animation</string>
     <string name="settings_show_more_module_info">Show more module information</string>
     <string name="settings_show_more_module_info_summary">Show the module ID and update JSON in the module list.</string>
     <string name="settings_simple_mode">Simple mode</string>
-    <string name="settings_simple_mode_summary">Hide optional cards on the home page.</string>
+    <string name="settings_simple_mode_summary">Keep the status and the device, kernel and manager versions on the home page, and collapse the secondary details.</string>
     <string name="install_partition_probe_failed">Partition probe failed (exit code %1$d): %2$s</string>
     <string name="install_partition_probe_empty">No installable partitions reported (slot suffix: %1$s)</string>
     <string name="install_partition_unresolved">Select a target partition before continuing</string>

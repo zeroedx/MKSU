@@ -133,8 +133,8 @@ fun HomePagerMaterial(
                 state = state,
                 actions = actions,
             )
+            InfoCard(systemInfo = state.systemInfo, simpleMode = state.simpleMode)
             if (!state.simpleMode) {
-                InfoCard(systemInfo = state.systemInfo)
                 SupportLinks(onOpenUrl = actions.onOpenUrl)
             }
             Spacer(
@@ -393,6 +393,7 @@ private fun SupportLinks(
 @Composable
 private fun InfoCard(
     systemInfo: SystemInfo,
+    simpleMode: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     @Composable
@@ -456,28 +457,32 @@ private fun InfoCard(
                     content = systemInfo.deviceModel,
                 )
             }
-            item {
-                InfoCardItem(
-                    icon = Icons.Filled.Fingerprint,
-                    label = stringResource(R.string.home_fingerprint),
-                    content = systemInfo.fingerprint,
-                )
+            if (!simpleMode) {
+                item {
+                    InfoCardItem(
+                        icon = Icons.Filled.Fingerprint,
+                        label = stringResource(R.string.home_fingerprint),
+                        content = systemInfo.fingerprint,
+                    )
+                }
             }
         }
-        SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
-            item {
-                InfoCardItem(
-                    icon = Icons.Filled.Security,
-                    label = stringResource(R.string.home_selinux_status),
-                    content = selinuxDisplay,
-                )
-            }
-            item {
-                InfoCardItem(
-                    icon = Icons.Filled.FilterList,
-                    label = stringResource(R.string.home_seccomp_status),
-                    content = seccompDisplay,
-                )
+        if (!simpleMode) {
+            SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    InfoCardItem(
+                        icon = Icons.Filled.Security,
+                        label = stringResource(R.string.home_selinux_status),
+                        content = selinuxDisplay,
+                    )
+                }
+                item {
+                    InfoCardItem(
+                        icon = Icons.Filled.FilterList,
+                        label = stringResource(R.string.home_seccomp_status),
+                        content = seccompDisplay,
+                    )
+                }
             }
         }
     }

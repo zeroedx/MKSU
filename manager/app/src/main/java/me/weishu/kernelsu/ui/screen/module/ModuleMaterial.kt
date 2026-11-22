@@ -715,6 +715,8 @@ private fun ModuleItem(
     val maxLinesLimit = LocalModuleDescriptionMaxLines.current
     var expanded by rememberSaveable(module.id) { mutableStateOf(false) }
     var descriptionCanExpand by rememberSaveable(module.id) { mutableStateOf(true) }
+    val updateJsonCopiedMessage = stringResource(R.string.module_update_json_copied)
+    val context = LocalContext.current
     val canOpenWebUi = module.hasWebUi && !module.remove && module.enabled
     val cardInteractionSource = remember { MutableInteractionSource() }
     val descriptionInteractionSource = remember { MutableInteractionSource() }
@@ -770,12 +772,14 @@ private fun ModuleItem(
                     )
 
                     if (showMoreModuleInfo) {
-                        Text(
-                            text = "${stringResource(id = R.string.module_id)}: ${module.id}",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            textDecoration = textDecoration
-                        )
+                        if (module.id.isNotEmpty()) {
+                            Text(
+                                text = "${stringResource(id = R.string.module_id)}: ${module.id}",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                                textDecoration = textDecoration
+                            )
+                        }
                         if (module.updateJson.isNotEmpty()) {
                             Text(
                                 text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
@@ -783,7 +787,20 @@ private fun ModuleItem(
                                 style = MaterialTheme.typography.bodySmall,
                                 textDecoration = textDecoration,
                                 maxLines = 5,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.combinedClickable(
+                                    onClick = {},
+                                    onLongClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("Update JSON URL", module.updateJson))
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        Toast.makeText(
+                                            context,
+                                            updateJsonCopiedMessage,
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
                             )
                         }
                     }

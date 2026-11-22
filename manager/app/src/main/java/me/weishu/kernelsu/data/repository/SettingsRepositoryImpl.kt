@@ -13,10 +13,12 @@ import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.magica.BootCompletedReceiver
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.screen.modulerepo.RepoSort
+import me.weishu.kernelsu.ui.util.FeatureSnapshot
 import me.weishu.kernelsu.ui.util.execKsud
 import me.weishu.kernelsu.ui.util.getFeaturePersistValue
-import me.weishu.kernelsu.ui.util.getFeatureValue
+import me.weishu.kernelsu.ui.util.getFeatureSnapshots as readFeatureSnapshots
 import me.weishu.kernelsu.ui.util.getFeatureStatus
+import me.weishu.kernelsu.ui.util.getFeatureValue
 import java.security.SecureRandom
 
 private const val SETTINGS_PREFS = "settings"
@@ -190,6 +192,9 @@ class SettingsRepositoryImpl : SettingsRepository {
         prefs.edit { putString(INTENT_TOKEN_KEY, token) }
         return token
     }
+
+    override suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot> =
+        readFeatureSnapshots(features)
 
     override suspend fun getSuCompatStatus(): String = getFeatureStatus("su_compat")
 

@@ -1,5 +1,6 @@
 package me.weishu.kernelsu.ui.component.bottombar
 
+import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -45,6 +46,9 @@ class MainPagerState(
         navJob = coroutineScope.launch {
             val myJob = coroutineContext.job
             try {
+                // A finger still on the pager owns the scroll mutation at UserInput priority;
+                // cancel it so a bottom bar tap always wins. Same fix as BakaSU MainScreen.
+                pagerState.scroll(MutatePriority.PreventUserInput) { }
                 if (animatePageChanges) {
                     pagerState.springAnimateToPage(targetIndex)
                 } else {

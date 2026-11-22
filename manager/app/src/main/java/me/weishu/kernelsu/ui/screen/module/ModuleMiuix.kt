@@ -78,12 +78,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -784,6 +786,9 @@ fun ModuleItem(
     val hasDescription = module.description.isNotBlank()
     val maxLinesLimit = LocalModuleDescriptionMaxLines.current
     var expanded by rememberSaveable(module.id) { mutableStateOf(false) }
+    val updateJsonCopiedMessage = stringResource(R.string.module_update_json_copied)
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         modifier = Modifier
@@ -868,13 +873,15 @@ fun ModuleItem(
                     textDecoration = textDecoration
                 )
                 if (showMoreModuleInfo) {
-                    Text(
-                        text = "${stringResource(id = R.string.module_id)}: ${module.id}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight(550),
-                        color = colorScheme.onSurfaceVariantSummary,
-                        textDecoration = textDecoration
-                    )
+                    if (module.id.isNotEmpty()) {
+                        Text(
+                            text = "${stringResource(id = R.string.module_id)}: ${module.id}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight(550),
+                            color = colorScheme.onSurfaceVariantSummary,
+                            textDecoration = textDecoration
+                        )
+                    }
                     if (module.updateJson.isNotEmpty()) {
                         Text(
                             text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
@@ -883,7 +890,20 @@ fun ModuleItem(
                             color = colorScheme.onSurfaceVariantSummary,
                             textDecoration = textDecoration,
                             maxLines = 5,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.combinedClickable(
+                                onClick = {},
+                                onLongClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Update JSON URL", module.updateJson))
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    Toast.makeText(
+                                        context,
+                                        updateJsonCopiedMessage,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
                         )
                     }
                 }

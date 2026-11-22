@@ -48,9 +48,12 @@ import androidx.compose.material.icons.filled.Brightness3
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.DesignServices
 import androidx.compose.material.icons.rounded.Pin
 import androidx.compose.material.icons.rounded.Style
@@ -94,6 +97,8 @@ import me.weishu.kernelsu.ui.component.material.SegmentedSwitchItem
 import me.weishu.kernelsu.ui.component.material.TonalCard
 import me.weishu.kernelsu.ui.component.material.TopBarBackButton
 import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
+import me.weishu.kernelsu.ui.animation.predictiveback.predictiveBackAnimationIndex
+import me.weishu.kernelsu.ui.animation.predictiveback.predictiveBackAnimationValue
 import me.weishu.kernelsu.ui.theme.ColorMode
 import me.weishu.kernelsu.ui.theme.keyColorOptions
 import me.weishu.kernelsu.ui.theme.rememberKernelSUColorScheme
@@ -111,6 +116,14 @@ fun ColorPaletteScreenMaterial(
     val colorStyle = state.currentPaletteStyle
     val colorSpec = state.currentColorSpec
     val haptic = LocalHapticFeedback.current
+    val predictiveBackAnimationItems = listOf(
+        stringResource(R.string.settings_predictive_back_default),
+        stringResource(R.string.settings_predictive_back_aosp),
+        stringResource(R.string.settings_predictive_back_scale),
+        stringResource(R.string.settings_predictive_back_classic),
+        stringResource(R.string.settings_predictive_back_none),
+    )
+    val predictiveBackSelectedIndex = predictiveBackAnimationIndex(uiState.predictiveBackAnimation)
 
     ExpressiveScaffold(
         topBar = {
@@ -287,6 +300,32 @@ fun ColorPaletteScreenMaterial(
                 )
             }
 
+            item {
+                SegmentedColumn(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    content = listOf(
+                        {
+                            SegmentedSwitchItem(
+                                icon = Icons.Rounded.Info,
+                                title = stringResource(id = R.string.settings_show_more_module_info),
+                                summary = stringResource(id = R.string.settings_show_more_module_info_summary),
+                                checked = uiState.showMoreModuleInfo,
+                                onCheckedChange = actions.onSetShowMoreModuleInfo
+                            )
+                        },
+                        {
+                            SegmentedSwitchItem(
+                                icon = Icons.Rounded.Dashboard,
+                                title = stringResource(id = R.string.settings_simple_mode),
+                                summary = stringResource(id = R.string.settings_simple_mode_summary),
+                                checked = uiState.simpleMode,
+                                onCheckedChange = actions.onSetSimpleMode
+                            )
+                        }
+                    )
+                )
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 item {
                     SegmentedColumn(
@@ -299,6 +338,20 @@ fun ColorPaletteScreenMaterial(
                                     summary = stringResource(id = R.string.settings_enable_predictive_back_summary),
                                     checked = uiState.enablePredictiveBack,
                                     onCheckedChange = actions.onSetEnablePredictiveBack
+                                )
+                            },
+                            {
+                                SegmentedDropdownItem(
+                                    icon = Icons.Rounded.Animation,
+                                    title = stringResource(id = R.string.settings_predictive_back_animation),
+                                    summary = stringResource(id = R.string.settings_predictive_back_animation_summary),
+                                    items = predictiveBackAnimationItems,
+                                    selectedIndex = predictiveBackSelectedIndex,
+                                    onItemSelected = { index ->
+                                        actions.onSetPredictiveBackAnimation(
+                                            predictiveBackAnimationValue(index)
+                                        )
+                                    }
                                 )
                             }
                         )
