@@ -3,6 +3,7 @@ name: Build Manager
 on:
   push:
     branches: [ "main", "dev", "ci" ]
+    # Only run when files that affect the build (manager, kernel, userspace, tooling) change.
     paths:
       - '.github/workflows/build-manager.yml'
       - '.github/workflows/build-lkm.yml'
