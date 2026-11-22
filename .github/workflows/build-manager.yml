@@ -47,7 +47,6 @@ jobs:
       expected_size: ${{ steps.extract.outputs.expected_size }}
       expected_hash: ${{ steps.extract.outputs.expected_hash }}
       cert_sha256: ${{ steps.extract.outputs.cert_sha256 }}
-      manager_package: ${{ steps.extract.outputs.manager_package }}
       keystore: ${{ steps.gen.outputs.keystore }}
       keystore_password: ${{ steps.gen.outputs.keystore_password }}
       key_password: ${{ steps.gen.outputs.key_password }}
@@ -100,11 +99,6 @@ jobs:
           KEYSTORE_B64: ${{ github.event_name == 'pull_request' && steps.gen.outputs.keystore || secrets.KEYSTORE }}
         run: |
           echo "$KEYSTORE_B64" | base64 -d > signing-key.jks
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PACKAGE="com.zeroedx.mksu.pr"
-          else
-            PACKAGE="com.zeroedx.mksu"
-          fi
 
           keytool -exportcert \
             -alias "$KEY_ALIAS" \
@@ -118,9 +112,7 @@ jobs:
           echo "expected_size=$SIZE_HEX" >> $GITHUB_OUTPUT
           echo "expected_hash=$HASH" >> $GITHUB_OUTPUT
           echo "cert_sha256=$HASH" >> $GITHUB_OUTPUT
-          echo "manager_package=$PACKAGE" >> $GITHUB_OUTPUT
 
-          echo "Manager package: $PACKAGE"
           echo "Certificate size: $SIZE_HEX ($SIZE_DEC bytes)"
           echo "Certificate hash: $HASH"
 
@@ -130,7 +122,7 @@ jobs:
     with:
       expected_size: ${{ needs.generate-key.outputs.expected_size }}
       expected_hash: ${{ needs.generate-key.outputs.expected_hash }}
-      manager_package: ${{ needs.generate-key.outputs.manager_package }}
+      manager_package: ${{ github.event_name == 'pull_request' && 'com.zeroedx.mksu.pr' || 'com.zeroedx.mksu' }}
     secrets: inherit
 
   build-ksuinit:
@@ -235,7 +227,7 @@ jobs:
       - name: Build with Gradle
         env:
           MKSU_CERT_SHA256: ${{ needs.generate-key.outputs.cert_sha256 }}
-          MANAGER_PACKAGE: ${{ needs.generate-key.outputs.manager_package }}
+          MANAGER_PACKAGE: ${{ github.event_name == 'pull_request' && 'com.zeroedx.mksu.pr' || 'com.zeroedx.mksu' }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             ./gradlew clean assembleRelease \
