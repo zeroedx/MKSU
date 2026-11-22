@@ -12,5 +12,7 @@ data class MainActivityUiState(
     val enableFloatingBottomBar: Boolean,
     val enableFloatingBottomBarBlur: Boolean,
     val enableNavigationBadge: Boolean,
+    val enablePredictiveBack: Boolean,
+    val predictiveBackAnimation: String,
     val uiMode: UiMode,
 )

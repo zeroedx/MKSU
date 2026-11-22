@@ -13,23 +13,14 @@ extra["androidCompileNdkVersion"] = libs.versions.ndk.get()
 extra["androidSourceCompatibility"] = JavaVersion.VERSION_21
 extra["androidTargetCompatibility"] = JavaVersion.VERSION_21
 extra["managerVersionCode"] = getVersionCode()
-extra["managerVersionName"] = getVersionName()
+extra["managerVersionName"] = "4.0.0"
 
 fun getGitCommitCount(): Int {
     val process = Runtime.getRuntime().exec(arrayOf("git", "rev-list", "--count", "HEAD"))
     return process.inputStream.bufferedReader().use { it.readText().trim().toInt() }
 }
 
-fun getGitDescribe(): String {
-    val process = Runtime.getRuntime().exec(arrayOf("git", "describe", "--tags", "--always"))
-    return process.inputStream.bufferedReader().use { it.readText().trim() }
-}
-
 fun getVersionCode(): Int {
     val commitCount = getGitCommitCount()
     return 30000 + commitCount
-}
-
-fun getVersionName(): String {
-    return getGitDescribe()
 }

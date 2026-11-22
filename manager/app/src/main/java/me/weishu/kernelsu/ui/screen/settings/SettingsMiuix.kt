@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Article
 import androidx.compose.material.icons.rounded.Adb
+import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ContactPage
 import androidx.compose.material.icons.rounded.Dashboard
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.Fence
 import androidx.compose.material.icons.rounded.FolderDelete
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material.icons.rounded.RemoveCircle
@@ -80,6 +83,18 @@ fun SettingPagerMiuix(
     val loadingDialog = rememberLoadingDialog()
     val showUninstallDialog = rememberSaveable { mutableStateOf(false) }
     val showSendLogDialog = rememberSaveable { mutableStateOf(false) }
+    val predictiveBackItems = listOf(
+        stringResource(R.string.settings_predictive_back_default),
+        stringResource(R.string.settings_predictive_back_scale),
+        stringResource(R.string.settings_predictive_back_slide),
+        stringResource(R.string.settings_predictive_back_none),
+    )
+    val predictiveBackIndex = when (uiState.predictiveBackAnimation) {
+        "scale" -> 1
+        "slide" -> 2
+        "none" -> 3
+        else -> 0
+    }
 
     Scaffold(
         topBar = {
@@ -175,6 +190,73 @@ fun SettingPagerMiuix(
                                 )
                             },
                             onClick = actions.onOpenTheme
+                        )
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_show_more_module_info),
+                            summary = stringResource(id = R.string.settings_show_more_module_info_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Info,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_show_more_module_info),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.showMoreModuleInfo,
+                            onCheckedChange = actions.onSetShowMoreModuleInfo
+                        )
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_simple_mode),
+                            summary = stringResource(id = R.string.settings_simple_mode_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Dashboard,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_simple_mode),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.simpleMode,
+                            onCheckedChange = actions.onSetSimpleMode
+                        )
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_enable_predictive_back),
+                            summary = stringResource(id = R.string.settings_enable_predictive_back_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.ArrowBack,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_enable_predictive_back),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.enablePredictiveBack,
+                            onCheckedChange = actions.onSetEnablePredictiveBack
+                        )
+                        OverlayDropdownPreference(
+                            title = stringResource(id = R.string.settings_predictive_back_animation),
+                            summary = stringResource(id = R.string.settings_predictive_back_animation_summary),
+                            items = predictiveBackItems,
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Animation,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_predictive_back_animation),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            enabled = uiState.enablePredictiveBack,
+                            selectedIndex = predictiveBackIndex,
+                            onSelectedIndexChange = { index ->
+                                actions.onSetPredictiveBackAnimation(
+                                    when (index) {
+                                        1 -> "scale"
+                                        2 -> "slide"
+                                        3 -> "none"
+                                        else -> "default"
+                                    }
+                                )
+                            }
                         )
                     }
 

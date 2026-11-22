@@ -22,6 +22,16 @@
 #include "uapi/app_profile.h"
 #include "klog.h" // IWYU pragma: keep
 
+#ifndef KSU_MANAGER_PACKAGE
+#error KSU_MANAGER_PACKAGE must be defined for manager authentication
+#endif
+#ifndef EXPECTED_SIZE
+#error EXPECTED_SIZE must be defined for manager authentication
+#endif
+#ifndef EXPECTED_HASH
+#error EXPECTED_HASH must be defined for manager authentication
+#endif
+
 struct sdesc {
     struct shash_desc shash;
     char ctx[];
@@ -351,24 +361,15 @@ int get_pkg_from_apk_path(char *pkg, const char *path)
 
 bool is_manager_apk(char *path)
 {
-#ifdef KSU_MANAGER_PACKAGE
     char pkg[KSU_MAX_PACKAGE_NAME];
     if (get_pkg_from_apk_path(pkg, path) < 0) {
         pr_err("Failed to get package name from apk path: %s\n", path);
         return false;
     }
 
-    // pkg is `<real package>`
-    if (strncmp(pkg, KSU_MANAGER_PACKAGE, sizeof(KSU_MANAGER_PACKAGE))) {
+    if (strcmp(pkg, KSU_MANAGER_PACKAGE) != 0) {
         return false;
     }
-#endif
-    if (check_v2_signature(path, EXPECTED_SIZE, EXPECTED_HASH)) {
-        return true;
-    }
-#ifdef EXPECTED_SIZE2
-    return check_v2_signature(path, EXPECTED_SIZE2, EXPECTED_HASH2);
-#else
-    return false;
-#endif
+
+    return check_v2_signature(path, EXPECTED_SIZE, EXPECTED_HASH);
 }

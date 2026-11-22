@@ -7,6 +7,18 @@ else
     KMIS=$1
 fi
 
+missing=""
+for name in KSU_MANAGER_PACKAGE KSU_EXPECTED_SIZE KSU_EXPECTED_HASH; do
+    [ -n "${!name}" ] || missing="$missing $name"
+done
+if [ -n "$missing" ]; then
+    echo "ERROR: missing required build parameters:$missing" >&2
+    echo "  KSU_MANAGER_PACKAGE  manager application id (e.g. com.zeroedx.mksu)" >&2
+    echo "  KSU_EXPECTED_SIZE    release certificate size (e.g. 0x02d4)" >&2
+    echo "  KSU_EXPECTED_HASH    release certificate SHA-256 (64 hex chars)" >&2
+    exit 1
+fi
+
 # Some patch is required to use separate build dir when building for android16-6.12, see:
 # https://github.com/5ec1cff/ddk#local-%E6%A8%A1%E5%BC%8F%E6%9E%84%E5%BB%BA%E9%80%82%E7%94%A8%E4%BA%8E%E5%A4%9A%E4%B8%AA-target-%E7%89%88%E6%9C%AC%E7%9A%84%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97
 
@@ -15,7 +27,10 @@ mv .ddk-version .ddk-version.bak 2> /dev/null || true
 for kmi in $KMIS; do
     echo "========== Building $kmi =========="
     ODIR="$(realpath .)/out/$kmi"
-    if ddk build "$kmi" "ODIR=$ODIR" -e CONFIG_KSU=m; then
+    if ddk build "$kmi" "ODIR=$ODIR" -e CONFIG_KSU=m \
+        -e KSU_MANAGER_PACKAGE="$KSU_MANAGER_PACKAGE" \
+        -e KSU_EXPECTED_SIZE="$KSU_EXPECTED_SIZE" \
+        -e KSU_EXPECTED_HASH="$KSU_EXPECTED_HASH"; then
         if [ -f "$ODIR/kernelsu.ko" ]; then
             cp "$ODIR/kernelsu.ko" "kernelsu-${kmi}.ko"
             llvm-strip -d "kernelsu-${kmi}.ko"

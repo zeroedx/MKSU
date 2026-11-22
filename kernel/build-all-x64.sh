@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
 
+missing=""
+for name in KSU_MANAGER_PACKAGE KSU_EXPECTED_SIZE KSU_EXPECTED_HASH; do
+    [ -n "${!name}" ] || missing="$missing $name"
+done
+if [ -n "$missing" ]; then
+    echo "ERROR: missing required build parameters:$missing" >&2
+    echo "  KSU_MANAGER_PACKAGE  manager application id (e.g. com.zeroedx.mksu)" >&2
+    echo "  KSU_EXPECTED_SIZE    release certificate size (e.g. 0x02d4)" >&2
+    echo "  KSU_EXPECTED_HASH    release certificate SHA-256 (64 hex chars)" >&2
+    exit 1
+fi
+
 if [ -z "$1" ]; then
     TARGETS="android12-5.10 android13-5.10 android13-5.15 android14-5.15 android14-6.1 android15-6.6 android16-6.12 android17-6.18"
     #KMIS="android16-6.12"
@@ -18,6 +30,12 @@ RUSTS=(none none none none none none rust-1.82.0 rust-1.91.1.p3)
 export ARCH=x86_64
 export LLVM=1
 export LLVM_IAS=1
+
+EXTRA_ARGS=(
+    KSU_MANAGER_PACKAGE="$KSU_MANAGER_PACKAGE"
+    KSU_EXPECTED_SIZE="$KSU_EXPECTED_SIZE"
+    KSU_EXPECTED_HASH="$KSU_EXPECTED_HASH"
+)
 
 for i in "${!KMIS[@]}"; do
     kmi=${KMIS[i]}
@@ -55,9 +73,9 @@ for i in "${!KMIS[@]}"; do
     KDIR=/opt/ddk/kdir-x64/$kmi
 
     if [ "$kmi" == "android17-6.18" ]; then
-        make -C "$KDIR" "M=$MDIR" "MO=$ODIR" compile_commands.json modules CONFIG_KSU=m CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=y
+        make -C "$KDIR" "M=$MDIR" "MO=$ODIR" compile_commands.json modules CONFIG_KSU=m CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=y "${EXTRA_ARGS[@]}"
     else
-        make -C "$KDIR" "M=$ODIR" "src=$MDIR" compile_commands.json modules CONFIG_KSU=m CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=y
+        make -C "$KDIR" "M=$ODIR" "src=$MDIR" compile_commands.json modules CONFIG_KSU=m CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=y "${EXTRA_ARGS[@]}"
     fi
 
     export PATH="$ORIG_PATH"

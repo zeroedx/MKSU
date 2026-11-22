@@ -212,7 +212,7 @@ fun flashModule(
         }
         val cmd = "module install ${file.absolutePath}"
         val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
-        Log.i("KernelSU", "install module $uri result: $result")
+        Log.i("MKSU", "install module $uri result: $result")
 
         file.delete()
 
@@ -240,7 +240,7 @@ fun runModuleAction(
             .to(stdoutCallback, stderrCallback).exec()
     }
 
-    Log.i("KernelSU", "Module runAction result: $result")
+    Log.i("MKSU", "Module runAction result: $result")
 
     return result.isSuccess
 }
@@ -346,7 +346,7 @@ fun installBoot(
     }
 
     val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
-    Log.i("KernelSU", "install boot result: ${result.isSuccess}")
+    Log.i("MKSU", "install boot result: ${result.isSuccess}")
 
     bootFile?.delete()
     lkmFile?.delete()

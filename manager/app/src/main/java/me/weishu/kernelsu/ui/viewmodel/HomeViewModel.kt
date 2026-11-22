@@ -69,6 +69,7 @@ class HomeViewModel(
             isSafeMode = Natives.isSafeMode,
             isLateLoadMode = Natives.isLateLoadMode,
             checkUpdateEnabled = settingsRepo.checkUpdate,
+            simpleMode = settingsRepo.simpleMode,
             latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(

@@ -20,6 +20,7 @@ data class HomeUiState(
     val isSafeMode: Boolean,
     val isLateLoadMode: Boolean,
     val checkUpdateEnabled: Boolean,
+    val simpleMode: Boolean,
     val latestVersionInfo: LatestVersionInfo,
     val currentManagerVersionCode: Long,
     val systemInfo: SystemInfo,

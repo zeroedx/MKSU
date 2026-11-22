@@ -3,10 +3,22 @@ package me.weishu.kernelsu.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -43,7 +55,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
+import androidx.navigation3.runtime.NavKey
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -53,6 +68,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.Natives
+import me.weishu.kernelsu.ManagerIdentity
 import me.weishu.kernelsu.ui.component.bottombar.BottomBar
 import me.weishu.kernelsu.ui.component.bottombar.MainPagerState
 import me.weishu.kernelsu.ui.component.bottombar.NavigationBadgeState
@@ -107,7 +123,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Natives.isManager && !Natives.requireNewKernel()) install()
+        if (Natives.isManager) {
+            val identity = ManagerIdentity.verify(this)
+            if (identity.isValid) {
+                if (!Natives.requireNewKernel()) install()
+            } else {
+                Log.e(
+                    "MKSU",
+                    "Manager identity rejected: package=${identity.packageMatches}, " +
+                        "certificate=${identity.certificateMatches}, kernel=${identity.kernelAccepts}",
+                )
+            }
+        }
 
         if (savedInstanceState == null) intent?.let { intentChannel.trySend(it) }
 
@@ -179,6 +206,10 @@ class MainActivity : ComponentActivity() {
                                     else -> navigator.pop()
                                 }
                             },
+                            predictivePopTransitionSpec = predictiveBackTransition(
+                                uiState.enablePredictiveBack,
+                                uiState.predictiveBackAnimation
+                            ),
                             entryProvider = entryProvider {
                                 entry<Route.Main> { mainScreenEntry() }
                                 entry<Route.About> { AboutScreen() }
@@ -408,4 +439,25 @@ private fun MainScreenBackHandler(
             mainState.animateToPage(0)
         }
     )
+}
+
+private fun predictiveBackTransition(
+    enabled: Boolean,
+    style: String,
+): AnimatedContentTransitionScope<Scene<NavKey>>.(Int) -> ContentTransform = { edge ->
+    if (!enabled || style == "none") {
+        ContentTransform(EnterTransition.None, ExitTransition.None)
+    } else when (style) {
+        "scale" -> ContentTransform(
+            targetContentEnter = scaleIn(tween(220), initialScale = 0.92f) + fadeIn(tween(220)),
+            initialContentExit = scaleOut(tween(220), targetScale = 0.92f) + fadeOut(tween(220)),
+        )
+
+        "slide" -> ContentTransform(
+            targetContentEnter = slideInHorizontally(tween(220)) { -it / 4 } + fadeIn(tween(220)),
+            initialContentExit = slideOutHorizontally(tween(220)) { it / 4 } + fadeOut(tween(220)),
+        )
+
+        else -> defaultPredictivePopTransitionSpec<NavKey>().invoke(this, edge)
+    }
 }

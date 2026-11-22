@@ -44,7 +44,9 @@ static int (*kallsyms_on_each_match_symbol_fn)(int (*fn)(void *, unsigned long),
 static int find_kernel_symbol_exact_cb(void *data, unsigned long addr)
 {
     *(unsigned long *)data = addr;
-    return 0;
+    // Stop after the first match; continuing overwrites the address with later symbols.
+    // Matches upstream KernelSU f49be695 (FinaSU 00fc959).
+    return 1;
 }
 #endif
 

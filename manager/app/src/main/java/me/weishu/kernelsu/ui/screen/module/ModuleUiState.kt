@@ -51,6 +51,7 @@ data class ModuleUiState(
     val sortEnabledFirst: Boolean = false,
     val sortActionFirst: Boolean = false,
     val checkModuleUpdate: Boolean = true,
+    val showMoreModuleInfo: Boolean = false,
     val isSafeMode: Boolean = false,
     val magiskInstalled: Boolean = false,
     val confirmDialogState: ModuleConfirmDialogState? = null,

@@ -134,9 +134,11 @@ fun HomePagerMaterial(
                 state = state,
                 actions = actions,
             )
-            InfoCard(systemInfo = state.systemInfo)
-            DonateCard(onOpenUrl = actions.onOpenUrl)
-            LearnMoreCard(onOpenUrl = actions.onOpenUrl)
+            if (!state.simpleMode) {
+                InfoCard(systemInfo = state.systemInfo)
+                DonateCard(onOpenUrl = actions.onOpenUrl)
+                LearnMoreCard(onOpenUrl = actions.onOpenUrl)
+            }
             Spacer(Modifier.height(bottomInnerPadding))
         }
     }
@@ -550,6 +552,7 @@ private fun previewHomeScreenState(
     isSafeMode = isSafeMode,
     isLateLoadMode = isLateLoadMode,
     checkUpdateEnabled = false,
+    simpleMode = false,
     latestVersionInfo = me.weishu.kernelsu.ui.util.module.LatestVersionInfo(),
     currentManagerVersionCode = 10000,
     systemInfo = previewSystemInfo.copy(selinuxStatus = selinuxStatus),

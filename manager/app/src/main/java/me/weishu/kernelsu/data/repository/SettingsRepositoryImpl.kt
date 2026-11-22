@@ -105,6 +105,18 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getBoolean("module_sort_action_first", false)
         set(value) = prefs.edit { putBoolean("module_sort_action_first", value) }
 
+    override var showMoreModuleInfo: Boolean
+        get() = prefs.getBoolean("show_more_module_info", false)
+        set(value) = prefs.edit { putBoolean("show_more_module_info", value) }
+
+    override var simpleMode: Boolean
+        get() = prefs.getBoolean("simple_mode", false)
+        set(value) = prefs.edit { putBoolean("simple_mode", value) }
+
+    override var predictiveBackAnimation: String
+        get() = prefs.getString("predictive_back_animation", "default") ?: "default"
+        set(value) = prefs.edit { putString("predictive_back_animation", value) }
+
     override var moduleRepoSortOrder: Int
         get() = prefs.getInt("module_repo_sort_order", RepoSort.UPDATED.ordinal)
         set(value) = prefs.edit { putInt("module_repo_sort_order", value) }

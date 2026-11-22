@@ -50,6 +50,8 @@ class MainActivityViewModel(
             enableFloatingBottomBar = settingRepo.enableFloatingBottomBar,
             enableFloatingBottomBarBlur = settingRepo.enableFloatingBottomBarBlur,
             enableNavigationBadge = settingRepo.enableNavigationBadge,
+            enablePredictiveBack = settingRepo.enablePredictiveBack,
+            predictiveBackAnimation = settingRepo.predictiveBackAnimation,
             uiMode = UiMode.fromValue(settingRepo.uiMode),
         )
     }
@@ -65,6 +67,8 @@ class MainActivityViewModel(
             "enable_floating_bottom_bar",
             "enable_floating_bottom_bar_blur",
             "enable_navigation_badge",
+            "enable_predictive_back",
+            "predictive_back_animation",
             "ui_mode",
         )
     }

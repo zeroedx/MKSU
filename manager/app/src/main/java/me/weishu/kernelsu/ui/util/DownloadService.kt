@@ -32,10 +32,10 @@ class DownloadService : Service() {
 
     companion object {
         const val CHANNEL_ID = "download_channel"
-        const val ACTION_DOWNLOAD = "me.weishu.kernelsu.action.DOWNLOAD"
-        const val ACTION_CANCEL = "me.weishu.kernelsu.action.CANCEL_DOWNLOAD"
-        const val ACTION_DISMISS_DOWNLOAD = "me.weishu.kernelsu.action.DISMISS_DOWNLOAD"
-        const val ACTION_INSTALL_MODULE = "me.weishu.kernelsu.action.INSTALL_MODULE"
+        const val ACTION_DOWNLOAD = "com.zeroedx.mksu.action.DOWNLOAD"
+        const val ACTION_CANCEL = "com.zeroedx.mksu.action.CANCEL_DOWNLOAD"
+        const val ACTION_DISMISS_DOWNLOAD = "com.zeroedx.mksu.action.DISMISS_DOWNLOAD"
+        const val ACTION_INSTALL_MODULE = "com.zeroedx.mksu.action.INSTALL_MODULE"
         const val EXTRA_URL = "url"
         const val EXTRA_TOKEN = "token"
         const val EXTRA_FILE_NAME = "fileName"

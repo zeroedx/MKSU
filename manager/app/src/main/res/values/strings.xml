@@ -6,8 +6,8 @@
     <string name="home_working">Working</string>
     <string name="home_working_version">Version: %s</string>
     <string name="home_unsupported">Unsupported</string>
-    <string name="home_unsupported_reason">KernelSU only supports GKI kernels now, but you can patch the image for GKI devices.</string>
-    <string name="home_version_mismatch">Manager version (%1$d) and KernelSU driver version (%2$d) mismatch.</string>
+    <string name="home_unsupported_reason">MKSU only supports GKI kernels now, but you can patch the image for GKI devices.</string>
+    <string name="home_version_mismatch">Manager version (%1$d) and MKSU driver version (%2$d) mismatch.</string>
     <string name="home_device_model">Device model</string>
     <string name="home_kernel">Kernel version</string>
     <string name="home_manager_version">Manager version</string>
@@ -38,7 +38,7 @@
     <string name="sulog_entry_unknown_event">Unknown event</string>
     <string name="sulog_entry_description_sucompat">Intercepted /system/bin/su request</string>
     <string name="sulog_entry_title_root_grant_request">Root grant request</string>
-    <string name="sulog_entry_description_ioctl_grant_root">Granted Root access via KernelSU ioctl</string>
+    <string name="sulog_entry_description_ioctl_grant_root">Granted Root access via MKSU ioctl</string>
     <string name="sulog_entry_title_daemon_restarted">Daemon restarted</string>
     <string name="sulog_entry_title_dropped_events">Dropped events</string>
     <string name="module_failed_to_enable">Failed to enable module: %s</string>
@@ -73,6 +73,8 @@
     <string name="module_uninstall_failed">Failed to uninstall: %s</string>
     <string name="module_version">Version</string>
     <string name="module_author">Author</string>
+    <string name="module_id">Module ID</string>
+    <string name="module_update_json">Update JSON</string>
     <string name="show_system_apps">Show system apps</string>
     <string name="send_log">Send logs</string>
     <string name="safe_mode">Safe mode</string>
@@ -83,13 +85,14 @@
     <string name="safe_mode_module_disabled">Module installation is disabled in safe mode</string>
     <string name="reboot_to_apply">Reboot to take effect</string>
     <string name="module_magisk_conflict">Modules are unavailable due to a conflict with Magisk!</string>
-    <string name="home_learn_kernelsu">Learn KernelSU</string>
-    <string name="home_learn_kernelsu_url">https://kernelsu.org/guide/what-is-kernelsu.html</string>
-    <string name="home_click_to_learn_kernelsu">Learn how to install KernelSU and use modules.</string>
+    <string name="home_learn_kernelsu">Learn MKSU</string>
+    <string name="home_learn_kernelsu_url">https://github.com/zeroedx/MKSU</string>
+    <string name="home_click_to_learn_kernelsu">Learn how to install MKSU and use modules.</string>
     <string name="home_support_title">Support Us</string>
-    <string name="home_support_content">KernelSU is, and always will be, free, and open source. However, you can show us that you care by making a donation.</string>
+    <string name="home_support_content">MKSU is, and always will be, free, and open source. However, you can show us that you care by making a donation.</string>
     <string name="home_gki_warning">Starting from v3.0.0, the GKI work mode will be used only in testing environments. We do not recommend it for daily use, and image files will no longer be provided.</string>
     <string name="about_source_code"><![CDATA[View source code at %1$s<br/>Join our %2$s channel]]></string>
+    <string name="about_upstream"><![CDATA[Upstream project: <b><a href="https://github.com/tiann/KernelSU">KernelSU</a></b>]]></string>
     <string name="profile" translatable="false">App Profile</string>
     <string name="profile_default">Default</string>
     <string name="profile_template">Template</string>
@@ -105,12 +108,12 @@
     <string name="profile_selinux_context">SELinux context</string>
     <string name="profile_umount_modules">Umount modules</string>
     <string name="failed_to_update_app_profile">Failed to update App Profile for %s</string>
-    <string name="uapi_mismatch">Manager uapi version (%1$d) and KernelSU driver uapi version (%2$d) mismatch.</string>
-    <string name="require_manager_version">The current KernelSU manager version %1$d is too low for KernelSU to work properly. Please upgrade manager to version %2$d or higher!</string>
-    <string name="require_kernel_version">The current KernelSU version %1$d is too low for the manager to work properly. Please upgrade to version %2$d or higher!</string>
+    <string name="uapi_mismatch">Manager uapi version (%1$d) and MKSU driver uapi version (%2$d) mismatch.</string>
+    <string name="require_manager_version">The current MKSU manager version %1$d is too low for MKSU to work properly. Please upgrade manager to version %2$d or higher!</string>
+    <string name="require_kernel_version">The current MKSU version %1$d is too low for the manager to work properly. Please upgrade to version %2$d or higher!</string>
     <string name="settings_umount_modules_default">Umount modules by default</string>
     <string name="settings_umount_modules_default_summary">The global default value for \"Umount modules\" in App Profile. If enabled, it will remove all module modifications to the system for apps that don\'t have a profile set.</string>
-    <string name="profile_umount_modules_summary">Enabling this option will allow KernelSU to restore any modified files by the modules for this app.</string>
+    <string name="profile_umount_modules_summary">Enabling this option will allow MKSU to restore any modified files by the modules for this app.</string>
     <string name="profile_selinux_domain">Domain</string>
     <string name="profile_selinux_rules">Rules</string>
     <string name="recently_installed">Recently installed</string>
@@ -149,6 +152,16 @@
     <string name="settings_check_update_summary">Automatically check for updates when opening the app.</string>
     <string name="settings_enable_predictive_back">Predictive back gesture</string>
     <string name="settings_enable_predictive_back_summary">Enable predictive back gesture support.</string>
+    <string name="settings_predictive_back_animation">Predictive back animation style</string>
+    <string name="settings_predictive_back_animation_summary">Choose how pages move when you swipe back.</string>
+    <string name="settings_predictive_back_default">System default</string>
+    <string name="settings_predictive_back_scale">Scale</string>
+    <string name="settings_predictive_back_slide">Slide</string>
+    <string name="settings_predictive_back_none">None</string>
+    <string name="settings_show_more_module_info">Show more module information</string>
+    <string name="settings_show_more_module_info_summary">Show the module ID and update JSON in the module list.</string>
+    <string name="settings_simple_mode">Simple mode</string>
+    <string name="settings_simple_mode_summary">Hide optional cards on the home page.</string>
     <string name="settings_module_check_update">Check for module updates</string>
     <string name="grant_root_failed">Failed to grant Root!</string>
     <string name="home_pr_build_warning">This is a PR debug build. Do NOT use it in production!</string>
@@ -181,9 +194,9 @@
     <string name="settings_uninstall_temporary">Uninstall temporarily</string>
     <string name="settings_uninstall_permanent">Uninstall permanently</string>
     <string name="settings_restore_stock_image">Restore stock image</string>
-    <string name="settings_uninstall_temporary_message">Temporarily uninstall KernelSU, restore to original state after next reboot.</string>
-    <string name="settings_uninstall_permanent_message">Uninstalling KernelSU (Root and all modules) completely and permanently.</string>
-    <string name="settings_restore_stock_image_message">Restore the stock factory image (if a backup exists), usually used before OTA; if you need to uninstall KernelSU, please use \"Uninstall permanently\".</string>
+    <string name="settings_uninstall_temporary_message">Temporarily uninstall MKSU, restore to original state after next reboot.</string>
+    <string name="settings_uninstall_permanent_message">Uninstalling MKSU (Root and all modules) completely and permanently.</string>
+    <string name="settings_restore_stock_image_message">Restore the stock factory image (if a backup exists), usually used before OTA; if you need to uninstall MKSU, please use \"Uninstall permanently\".</string>
     <string name="flashing">Flashing</string>
     <string name="flash_success">Flash success</string>
     <string name="flash_failed">Flash failed</string>
@@ -199,7 +212,7 @@
     <string name="settings_selinux_hide_reboot_required">Reboot to take effect</string>
     <string name="settings_selinux_hide_failed">Error: %d</string>
     <string name="settings_sulog">SU Log</string>
-    <string name="settings_sulog_summary">Record Root-related events into KernelSU sulog files</string>
+    <string name="settings_sulog_summary">Record Root-related events into MKSU sulog files</string>
     <string name="feature_status_unsupported_summary">Kernel does not support this feature</string>
     <string name="feature_status_managed_summary">This feature is managed by a module</string>
     <string name="settings_mode_enable_by_default">Enable (Default)</string>
@@ -297,7 +310,7 @@
     <string name="sort_by_install_time">Install time</string>
     <string name="sort_by_update_time">Update time</string>
     <string name="sort_reverse">Reverse</string>
-    <string name="profile_flags_desc_no_new_privs">Prevent further privilege escalation via KernelSU from within the context of this root profile</string>
+    <string name="profile_flags_desc_no_new_privs">Prevent further privilege escalation via MKSU from within the context of this root profile</string>
     <string name="module_shortcut_copy_scheme">Copy URL scheme</string>
     <string name="module_shortcut_scheme_copied">URL scheme copied</string>
     <string name="nav_rail_expand">Expand navigation rail</string>

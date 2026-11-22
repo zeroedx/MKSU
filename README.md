@@ -49,6 +49,7 @@ MKSU 是基于 KernelSU 的独立下游项目，面向需要精细管理 Root �
 - 开发仓库：[zeroedx/MKSU](https://github.com/zeroedx/MKSU)
 - 问题与建议：[Issues](https://github.com/zeroedx/MKSU/issues)
 - 安全问题：[安全报告说明](SECURITY.md)
+- 发布签名与证书配置：[发布签名说明](docs/SIGNING.md)
 
 ## 开源许可与致谢
 

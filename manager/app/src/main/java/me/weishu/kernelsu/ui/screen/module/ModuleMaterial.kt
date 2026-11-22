@@ -356,6 +356,7 @@ fun ModulePagerMaterial(
                         listState = searchListState,
                         displayModules = uiState.searchResults,
                         updateInfoMap = uiState.updateInfo,
+                        showMoreModuleInfo = uiState.showMoreModuleInfo,
                         actions = actions,
                         onClickModule = { module ->
                             if (module.hasWebUi) {
@@ -467,6 +468,7 @@ fun ModulePagerMaterial(
                 listState = listState,
                 displayModules = uiState.moduleList,
                 updateInfoMap = uiState.updateInfo,
+                showMoreModuleInfo = uiState.showMoreModuleInfo,
                 actions = actions,
                 onClickModule = { module ->
                     if (module.hasWebUi) {
@@ -501,6 +503,7 @@ private fun ModuleList(
     listState: LazyListState = rememberLazyListState(),
     displayModules: List<Module>,
     updateInfoMap: Map<String, ModuleUpdateInfo>,
+    showMoreModuleInfo: Boolean,
     actions: ModuleActions,
     onClickModule: (Module) -> Unit,
     onModuleAddShortcut: (Module, ShortcutType) -> Unit,
@@ -524,6 +527,7 @@ private fun ModuleList(
             ModuleItem(
                 module = module,
                 updateUrl = moduleUpdateInfo.downloadUrl,
+                showMoreModuleInfo = showMoreModuleInfo,
                 onUninstallClicked = {
                     if (module.remove) {
                         actions.onUndoUninstallModule(module)
@@ -566,7 +570,7 @@ private fun ModuleShortcutSheet(
     fun copyShortcutUrl() {
         val url = shortcutState.buildShortcutUrl() ?: return
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("KernelSU deep link", url))
+        clipboard.setPrimaryClip(ClipData.newPlainText("MKSU deep link", url))
         Toast.makeText(context, resources.getString(R.string.module_shortcut_scheme_copied), Toast.LENGTH_SHORT).show()
     }
 
@@ -709,6 +713,7 @@ private fun ModuleShortcutSheet(
 private fun ModuleItem(
     module: Module,
     updateUrl: String,
+    showMoreModuleInfo: Boolean,
     onUninstallClicked: () -> Unit,
     onCheckChanged: (Boolean) -> Unit,
     onUpdate: () -> Unit,
@@ -776,6 +781,25 @@ private fun ModuleItem(
                         style = MaterialTheme.typography.bodySmall,
                         textDecoration = textDecoration
                     )
+
+                    if (showMoreModuleInfo) {
+                        Text(
+                            text = "${stringResource(id = R.string.module_id)}: ${module.id}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            textDecoration = textDecoration
+                        )
+                        if (module.updateJson.isNotEmpty()) {
+                            Text(
+                                text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                                textDecoration = textDecoration,
+                                maxLines = 5,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))

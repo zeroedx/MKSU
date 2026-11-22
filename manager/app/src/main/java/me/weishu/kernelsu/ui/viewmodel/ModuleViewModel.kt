@@ -98,6 +98,7 @@ class ModuleViewModel(
         _uiState.update {
             it.copy(
                 checkModuleUpdate = settingsRepo.checkModuleUpdate,
+                showMoreModuleInfo = settingsRepo.showMoreModuleInfo,
                 sortEnabledFirst = settingsRepo.moduleSortEnabledFirst,
                 sortActionFirst = settingsRepo.moduleSortActionFirst,
             )

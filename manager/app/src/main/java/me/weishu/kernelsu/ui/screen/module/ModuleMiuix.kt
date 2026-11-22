@@ -480,6 +480,7 @@ fun ModulePagerMiuix(
                         .overScrollVertical(),
                     modules = uiState.searchResults,
                     updateInfoMap = uiState.updateInfo,
+                    showMoreModuleInfo = uiState.showMoreModuleInfo,
                     actions = actions,
                     onModuleAddShortcut = ::onModuleAddShortcut,
                     contentPadding = PaddingValues(
@@ -585,6 +586,7 @@ fun ModulePagerMiuix(
                                 .nestedScroll(nestedScrollConnection),
                             modules = modules,
                             updateInfoMap = uiState.updateInfo,
+                            showMoreModuleInfo = uiState.showMoreModuleInfo,
                             actions = actions,
                             onModuleAddShortcut = { module, type ->
                                 onModuleAddShortcut(module, type)
@@ -628,7 +630,7 @@ private fun ModuleShortcutDialog(
     fun copyShortcutUrl() {
         val url = shortcutState.buildShortcutUrl() ?: return
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("KernelSU deep link", url))
+        clipboard.setPrimaryClip(ClipData.newPlainText("MKSU deep link", url))
         Toast.makeText(context, resources.getString(R.string.module_shortcut_scheme_copied), Toast.LENGTH_SHORT).show()
     }
 
@@ -740,6 +742,7 @@ private fun ModuleList(
     modifier: Modifier = Modifier,
     modules: List<Module>,
     updateInfoMap: Map<String, ModuleUpdateInfo>,
+    showMoreModuleInfo: Boolean,
     actions: ModuleActions,
     onModuleAddShortcut: (Module, ShortcutType) -> Unit,
     contentPadding: PaddingValues,
@@ -764,6 +767,7 @@ private fun ModuleList(
                 ModuleItem(
                     module = module,
                     updateUrl = moduleUpdateInfo.downloadUrl,
+                    showMoreModuleInfo = showMoreModuleInfo,
                     onUninstall = {
                         actions.onRequestUninstallConfirmation(currentModuleState.value)
                     },
@@ -810,6 +814,7 @@ private fun ModuleList(
 fun ModuleItem(
     module: Module,
     updateUrl: String,
+    showMoreModuleInfo: Boolean,
     onUndoUninstall: () -> Unit,
     onUninstall: () -> Unit,
     onCheckChanged: (Boolean) -> Unit,
@@ -909,6 +914,26 @@ fun ModuleItem(
                     color = colorScheme.onSurfaceVariantSummary,
                     textDecoration = textDecoration
                 )
+                if (showMoreModuleInfo) {
+                    Text(
+                        text = "${stringResource(id = R.string.module_id)}: ${module.id}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight(550),
+                        color = colorScheme.onSurfaceVariantSummary,
+                        textDecoration = textDecoration
+                    )
+                    if (module.updateJson.isNotEmpty()) {
+                        Text(
+                            text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight(550),
+                            color = colorScheme.onSurfaceVariantSummary,
+                            textDecoration = textDecoration,
+                            maxLines = 5,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
             Switch(
                 enabled = !module.update,

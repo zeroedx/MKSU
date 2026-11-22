@@ -38,6 +38,9 @@ class SettingsViewModel(
             val miuixMonet = repo.miuixMonet
             val keyColor = repo.keyColor
             val enablePredictiveBack = repo.enablePredictiveBack
+            val predictiveBackAnimation = repo.predictiveBackAnimation
+            val showMoreModuleInfo = repo.showMoreModuleInfo
+            val simpleMode = repo.simpleMode
             val enableBlur = repo.enableBlur
             val enableFloatingBottomBar = repo.enableFloatingBottomBar
             val enableFloatingBottomBarBlur = repo.enableFloatingBottomBarBlur
@@ -78,6 +81,9 @@ class SettingsViewModel(
                     miuixMonet = miuixMonet,
                     keyColor = keyColor,
                     enablePredictiveBack = enablePredictiveBack,
+                    predictiveBackAnimation = predictiveBackAnimation,
+                    showMoreModuleInfo = showMoreModuleInfo,
+                    simpleMode = simpleMode,
                     enableBlur = enableBlur,
                     enableFloatingBottomBar = enableFloatingBottomBar,
                     enableFloatingBottomBarBlur = enableFloatingBottomBarBlur,
@@ -194,6 +200,21 @@ class SettingsViewModel(
     fun setEnablePredictiveBack(enabled: Boolean) {
         repo.enablePredictiveBack = enabled
         _uiState.update { it.copy(enablePredictiveBack = enabled) }
+    }
+
+    fun setPredictiveBackAnimation(animation: String) {
+        repo.predictiveBackAnimation = animation
+        _uiState.update { it.copy(predictiveBackAnimation = animation) }
+    }
+
+    fun setShowMoreModuleInfo(enabled: Boolean) {
+        repo.showMoreModuleInfo = enabled
+        _uiState.update { it.copy(showMoreModuleInfo = enabled) }
+    }
+
+    fun setSimpleMode(enabled: Boolean) {
+        repo.simpleMode = enabled
+        _uiState.update { it.copy(simpleMode = enabled) }
     }
 
     fun setEnableBlur(enabled: Boolean) {

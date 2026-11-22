@@ -18,6 +18,9 @@ interface SettingsRepository {
     var enableWebDebugging: Boolean
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean
+    var showMoreModuleInfo: Boolean
+    var simpleMode: Boolean
+    var predictiveBackAnimation: String
     var moduleRepoSortOrder: Int
     var superuserShowSystemApps: Boolean
     var superuserShowOnlyPrimaryUserApps: Boolean
