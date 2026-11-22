@@ -53,7 +53,10 @@ jobs:
           echo "ERROR: expected_size, expected_hash and manager_package are required."
           exit 1
         fi
-        EXTRA_ARGS="KSU_EXPECTED_SIZE=$EXPECTED_SIZE KSU_EXPECTED_HASH=$EXPECTED_HASH KSU_MANAGER_PACKAGE=$MANAGER_PACKAGE"
+        EXTRA_ARGS="KSU_PACKAGE_NAME=$MANAGER_PACKAGE KSU_EXPECTED_SIZE=$EXPECTED_SIZE KSU_EXPECTED_HASH=$EXPECTED_HASH"
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS KSU_IS_PR_BUILD=1"
+        fi
         CONFIG_KSU=m CC=clang make $EXTRA_ARGS
         
         echo "=== Build completed ==="
@@ -122,7 +125,10 @@ jobs:
           echo "ERROR: expected_size, expected_hash and manager_package are required."
           exit 1
         fi
-        EXTRA_ARGS="KSU_EXPECTED_SIZE=$EXPECTED_SIZE KSU_EXPECTED_HASH=$EXPECTED_HASH KSU_MANAGER_PACKAGE=$MANAGER_PACKAGE"
+        EXTRA_ARGS="KSU_PACKAGE_NAME=$MANAGER_PACKAGE KSU_EXPECTED_SIZE=$EXPECTED_SIZE KSU_EXPECTED_HASH=$EXPECTED_HASH"
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS KSU_IS_PR_BUILD=1"
+        fi
         
         MDIR=$(realpath .)
 

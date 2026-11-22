@@ -42,7 +42,7 @@
     <string name="reboot_to_apply">再起動すると有効化されます</string>
     <string name="module_magisk_conflict">モジュールが Magisk との競合により利用できません!</string>
     <string name="home_learn_kernelsu">MKSU について</string>
-    <string name="home_learn_kernelsu_url">https://kernelsu.org/ja_JP/guide/what-is-kernelsu.html</string>
+    <string name="home_learn_kernelsu_url">https://github.com/zeroedx/MKSU</string>
     <string name="home_click_to_learn_kernelsu">MKSU のインストール方法やモジュールの使い方はこちら</string>
     <string name="home_support_title">支援する</string>
     <string name="home_support_content">MKSU はこれからもずっと無料でオープンソースです。寄付をして頂くことで、開発を支援していただけます。</string>
@@ -74,7 +74,11 @@
     <string name="profile_umount_modules_summary">このオプションを有効にすると、MKSU はこのアプリのモジュールによって変更されたファイルを復元できるようになります。</string>
     <string name="settings_umount_modules_default">デフォルトでモジュールをアンマウントする</string>
     <string name="settings_umount_modules_default_summary">アプリプロファイルの「モジュールのアンマウント」の共通のデフォルト値です。 有効にすると、プロファイルセットを持たないアプリのシステムに対するすべてのモジュールの変更が削除されます。</string>
-    <string name="require_kernel_version">現在の MKSU バージョン %1$d はマネージャーが適切に機能するには低すぎます。 バージョン %2$d 以降にアップグレードしてください！</string>
+    <string name="home_lkm_update_available">内蔵 LKM の新しいバージョンが利用可能です。タップして更新します。</string>
+    <string name="home_lkm_custom">カスタム</string>
+    <string name="require_manager_version">マネージャーの更新が必要です。</string>
+    <string name="require_kernel_version">カーネルの更新が必要です。タップしてインストールします。</string>
+    <string name="require_kernel_version_gki">カーネルの更新が必要です。</string>
     <string name="module_changelog">変更履歴</string>
     <string name="app_profile_template_import_success">インポート成功</string>
     <string name="app_profile_export_to_clipboard">クリップボードからエクスポート</string>
