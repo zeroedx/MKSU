@@ -21,6 +21,7 @@ fun getGitCommitCount(): Int {
 }
 
 fun getVersionCode(): Int {
+    // Shared by the kernel and ksud as well: 40000 + commit count.
     val commitCount = getGitCommitCount()
-    return 30000 + commitCount
+    return 40000 + commitCount
 }

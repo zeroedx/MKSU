@@ -20,7 +20,8 @@ fn get_git_version() -> Result<(u32, String), std::io::Error> {
         .trim()
         .parse()
         .map_err(|_| std::io::Error::other("Failed to parse git count"))?;
-    let version_code = 30000 + version_code;
+    // Shared by the kernel and manager as well: 40000 + commit count.
+    let version_code = 40000 + version_code;
 
     let version_name = String::from_utf8(
         Command::new("git")
