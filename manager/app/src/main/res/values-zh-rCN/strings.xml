@@ -100,7 +100,7 @@
     <string name="home_support_title">支持开发</string>
     <string name="home_support_content">MKSU 将保持免费开源，向开发者捐赠以表示支持</string>
     <string name="home_gki_warning">自 v3.0.0 起 GKI 工作模式将仅用于测试环境，我们不建议用于日常使用，也不再提供镜像文件</string>
-    <string name="about_source_code"><![CDATA[在 %1$s 查看源码<br/>加入我们的 %2$s 频道<br/>加入我们的 <b><a href="https://pd.qq.com/s/8lipl1brp">QQ</a></b> 频道]]></string>
+    <string name="about_source_code"><![CDATA[在 %1$s 查看源码]]></string>
     <string name="profile_default">默认</string>
     <string name="profile_template">模板</string>
     <string name="profile_custom">自定义</string>
@@ -154,10 +154,8 @@
     <string name="app_profile_template_save_failed">模板保存失败</string>
     <string name="app_profile_template_import_empty">剪贴板为空！</string>
     <string name="app_profile_affects_following_apps">影响以下应用</string>
-    <string name="settings_check_update">检查更新</string>
-    <string name="settings_check_update_summary">在应用启动后自动检查是否有最新版</string>
-    <string name="settings_enable_predictive_back">预测性返回手势</string>
-    <string name="settings_enable_predictive_back_summary">启用系统预测性返回手势；下方的动画样式始终生效</string>
+    <string name="settings_enable_predictive_back">预测性返回动画</string>
+    <string name="settings_enable_predictive_back_summary">页面跟随返回手势移动，松手后完成或复位；关闭后返回仍可用，只是页面不再跟随手势</string>
     <string name="settings_enable_swipe_dismiss">横移返回手势</string>
     <string name="settings_enable_swipe_dismiss_summary">从屏幕边缘横移返回上一页</string>
     <string name="settings_pager_gesture_mode">页面切换手势</string>
@@ -165,6 +163,7 @@
     <string name="settings_pager_gesture_cross_axis">跨轴拦截</string>
     <string name="settings_pager_gesture_ios_like">iOS 风格</string>
     <string name="settings_module_check_update">检查模块更新</string>
+    <string name="settings_module_check_update_summary">打开应用时检查已安装模块的更新</string>
     <string name="grant_root_failed">获取 Root 失败！</string>
     <string name="home_pr_build_warning">当前为 PR 调试构建，请勿在生产环境中使用！</string>
     <string name="home_pr_kernel_warning">当前内核包含 PR 签名支持，这不是一个生产内核！</string>
@@ -380,7 +379,7 @@
     <string name="about_upstream"><![CDATA[上游项目：<b><a href="https://github.com/tiann/KernelSU">KernelSU</a></b>]]></string>
     <string name="uapi_mismatch">管理器 uapi 版本 (%1$d) 与 MKSU 驱动 uapi 版本 (%2$d) 不匹配！</string>
     <string name="settings_predictive_back_animation">预测性返回动画样式</string>
-    <string name="settings_predictive_back_animation_summary">选择页面切换（含返回手势）使用的动画</string>
+    <string name="settings_predictive_back_animation_summary">开启预测性返回动画时，页面切换与返回手势使用的动画</string>
     <string name="settings_predictive_back_default">系统默认</string>
     <string name="settings_predictive_back_aosp">AOSP</string>
     <string name="settings_predictive_back_scale">缩放</string>

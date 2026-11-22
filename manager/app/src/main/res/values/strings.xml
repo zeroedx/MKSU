@@ -113,7 +113,7 @@
     <string name="home_support_title">Support Us</string>
     <string name="home_support_content">MKSU is, and always will be, free, and open source. However, you can show us that you care by making a donation.</string>
     <string name="home_gki_warning">Starting from v3.0.0, the GKI work mode will be used only in testing environments. We do not recommend it for daily use, and image files will no longer be provided.</string>
-    <string name="about_source_code"><![CDATA[View source code at %1$s<br/>Join our %2$s channel]]></string>
+    <string name="about_source_code"><![CDATA[View source code at %1$s]]></string>
     <string name="profile" translatable="false">App Profile</string>
     <string name="profile_default">Default</string>
     <string name="profile_template">Template</string>
@@ -169,10 +169,8 @@
     <string name="app_profile_template_save_failed">Failed to save template</string>
     <string name="app_profile_template_import_empty">Clipboard is empty!</string>
     <string name="app_profile_affects_following_apps">Affects the following apps</string>
-    <string name="settings_check_update">Check for updates</string>
-    <string name="settings_check_update_summary">Automatically check for updates when opening the app.</string>
-    <string name="settings_enable_predictive_back">Predictive back gesture</string>
-    <string name="settings_enable_predictive_back_summary">Enable the system predictive back gesture. The animation style below applies either way.</string>
+    <string name="settings_enable_predictive_back">Predictive back animation</string>
+    <string name="settings_enable_predictive_back_summary">Pages follow the back gesture and settle when you release. Turning it off keeps back working, without the follow animation.</string>
     <string name="settings_enable_swipe_dismiss">Swipe back gesture</string>
     <string name="settings_enable_swipe_dismiss_summary">Swipe from the edge to return to the previous page.</string>
     <string name="settings_pager_gesture_mode">Pager gesture mode</string>
@@ -180,6 +178,7 @@
     <string name="settings_pager_gesture_cross_axis">Cross-axis</string>
     <string name="settings_pager_gesture_ios_like">iOS-like</string>
     <string name="settings_module_check_update">Check for module updates</string>
+    <string name="settings_module_check_update_summary">Check installed modules for updates when opening the app.</string>
     <string name="grant_root_failed">Failed to grant Root!</string>
     <string name="home_pr_build_warning">This is a PR debug build. Do NOT use it in production!</string>
     <string name="home_pr_kernel_warning">The kernel was built with PR signature support. This is not a production kernel!</string>
@@ -392,7 +391,7 @@
     <string name="about_upstream"><![CDATA[Upstream project: <b><a href="https://github.com/tiann/KernelSU">KernelSU</a></b>]]></string>
     <string name="uapi_mismatch">Manager uapi version (%1$d) and MKSU driver uapi version (%2$d) mismatch.</string>
     <string name="settings_predictive_back_animation">Predictive back animation style</string>
-    <string name="settings_predictive_back_animation_summary">Choose the animation used for page transitions, including back gestures.</string>
+    <string name="settings_predictive_back_animation_summary">Animation for page transitions and back gestures, used while predictive back animation is on.</string>
     <string name="settings_predictive_back_default">System default</string>
     <string name="settings_predictive_back_aosp">AOSP</string>
     <string name="settings_predictive_back_scale">Scale</string>

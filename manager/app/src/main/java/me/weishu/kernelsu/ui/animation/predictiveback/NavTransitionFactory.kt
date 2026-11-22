@@ -35,6 +35,13 @@ fun predictiveBackAnimationValue(index: Int): String = when (index) {
     else -> PREDICTIVE_BACK_MIUIX
 }
 
+/**
+ * The switch is a master gate for the gesture-following animation. The manifest keeps predictive
+ * back enabled either way, so a plain back still works and only the follow animation goes away.
+ */
+fun navTransitionFor(enabled: Boolean, value: String): NavTransition =
+    if (enabled) navTransitionFor(value) else NoPredictiveBackTransition
+
 fun navTransitionFor(value: String): NavTransition = when (normalize(value)) {
     PREDICTIVE_BACK_AOSP -> AospNavTransition
     PREDICTIVE_BACK_SCALE -> scaleNavTransition()

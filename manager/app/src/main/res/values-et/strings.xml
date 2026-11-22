@@ -60,8 +60,7 @@
     <string name="profile_groups">Grupid</string>
     <string name="home_support_content">MKSU on, ja alati jääb, tasuta ning avatud lähtekoodiga kättesaadavaks. Sellegipoolest võid sa näidata, et hoolid, ning teha annetuse.</string>
     <string name="profile_template">Mall</string>
-    <string name="about_source_code">Vaata lähtekoodi %1$sis<br/>
-Liitu meie %2$si kanaliga</string>
+    <string name="about_source_code"><![CDATA[Vaata lähtekoodi %1$sis]]></string>
     <string name="profile_name">Profiili nimi</string>
     <string name="profile_custom">Kohandatud</string>
     <string name="profile_namespace_inherited">Päritud</string>
@@ -101,8 +100,6 @@ Liitu meie %2$si kanaliga</string>
     <string name="settings_umount_modules_default_summary">Globaalne vaikeväärtus \"Lahtihaagitud moodulitele\" rakenduseprofiilis. Lubamisel eemaldab see kõik moodulite süsteemimuudatused rakendustele, millel ei ole profiili määratud.</string>
     <string name="enable_web_debugging_summary">Saab kasutada WebUI silumiseks, palun luba ainult vajadusel.</string>
     <string name="grant_root_failed">Juurkasutaja andmine ebaõnnestus!</string>
-    <string name="settings_check_update">Kontrolli uuendusi</string>
-    <string name="settings_check_update_summary">Rakenduse avamisel kontrolli automaatselt uuendusi</string>
     <string name="open">Ava</string>
     <string name="enable_web_debugging">Luba WebView silumine</string>
     <string name="save_log">Salvesta Logid</string>

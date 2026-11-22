@@ -18,7 +18,7 @@
     <string name="home_click_to_learn_kernelsu">Tìm hiểu cách cài đặt MKSU và sử dụng các module.</string>
     <string name="home_support_title">Ủng hộ chúng tôi</string>
     <string name="home_support_content">MKSU sẽ luôn là miễn phí và mã nguồn mở. Tuy nhiên, bạn có thể cho chúng tôi thấy rằng bạn quan tâm bằng cách quyên góp!</string>
-    <string name="about_source_code"><![CDATA[Xem mã nguồn tại %1$s<br/>Tham gia kênh %2$s của chúng tôi]]></string>
+    <string name="about_source_code"><![CDATA[Xem mã nguồn tại %1$s]]></string>
     <string name="module_magisk_conflict">Các module bị vô hiệu hoá do xung đột với Magisk!</string>
     <string name="module_uninstall_confirm">Bạn có THẬT SỰ muốn gỡ cài đặt module %s không?</string>
     <string name="send_log">Gửi nhật ký</string>
@@ -111,8 +111,6 @@
     <string name="enable_web_debugging">Gỡ lỗi WebView</string>
     <string name="enable_web_debugging_summary">Có thể sử dụng để gỡ lỗi WebUI. Vui lòng chỉ bật khi cần thiết.</string>
     <string name="grant_root_failed">Cấp quyền Root thất bại!</string>
-    <string name="settings_check_update">Kiểm tra cập nhật</string>
-    <string name="settings_check_update_summary">Tự động kiểm tra cập nhật khi mở ứng dụng.</string>
     <string name="open">Mở</string>
     <string name="close">Đóng</string>
     <string name="install_inactive_slot">Cài đặt vào phân vùng không hoạt động (Sau OTA)</string>
@@ -229,8 +227,6 @@
     <string name="home_jailbreak">Jailbreak</string>
     <string name="jailbreak_timeout">Jailbreak thất bại! Vui lòng kiểm tra nhật ký!</string>
     <string name="jailbreak_reboot_warning">Bạn đang ở chế độ Jailbreak. Khởi động lại sẽ làm mất quyền truy cập root, và bạn sẽ phải jailbreak lại sau khi thiết bị khởi động. Bạn có muốn khởi động lại không?</string>
-    <string name="settings_enable_predictive_back">Cử chỉ quay lại dự đoán</string>
-    <string name="settings_enable_predictive_back_summary">Kích hoạt tính năng hỗ trợ cử chỉ quay lại dự đoán.</string>
     <string name="home_pr_build_warning">Đây là bản dựng gỡ lỗi cho yêu cầu kéo (PR). KHÔNG sử dụng nó trong môi trường sản xuất!</string>
     <string name="home_pr_kernel_warning">Kernel này được xây dựng với việc hỗ trợ chữ ký yêu cầu kéo (PR signature). Đây không phải là kernel dành cho môi trường sản xuất!</string>
     <string name="jailbreak_flash_warning">Bạn đang ở ** Chế độ Jailbreak**. Việc flash một phân vùng trên thiết bị có **bootloader bị khóa** sẽ làm hỏng AVB (Android Verified Boot) và có thể khiến thiết bị **không khởi động được**.\n\nHãy đảm bảo rằng bootloader của bạn đã được mở khoá trước khi tiếp tục!</string>

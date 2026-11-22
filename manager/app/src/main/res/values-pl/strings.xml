@@ -46,7 +46,7 @@
     <string name="home_click_to_learn_kernelsu">Dowiedz się jak zainstalować MKSU i jak korzystać z modułów.</string>
     <string name="home_support_title">Wesprzyj nas</string>
     <string name="home_support_content">MKSU jest i zawsze będzie darmowy oraz otwarty. Niemniej jednak możesz nam pokazać, że Ci zależy, wysyłając darowiznę.</string>
-    <string name="about_source_code"><![CDATA[Przejrzyj kod źródłowy na %1$s<br/>Dołącz do kanału %2$s]]></string>
+    <string name="about_source_code"><![CDATA[Przejrzyj kod źródłowy na %1$s]]></string>
     <string name="profile" translatable="false">Profil aplikacji</string>
     <string name="profile_default">Domyślny</string>
     <string name="profile_template">Szablon</string>
@@ -117,8 +117,6 @@
     <string name="app_profile_template_id_exist">Szablon o takim identyfikatorze już istnieje!</string>
     <string name="grant_root_failed">Nie udało się przyznać roota!</string>
     <string name="open">Otwórz</string>
-    <string name="settings_check_update">Wyszukaj aktualizacje</string>
-    <string name="settings_check_update_summary">Wyszukuj aktualizacje automatycznie przy otwieraniu aplikacji.</string>
     <string name="settings_uninstall_permanent">Odinstaluj zupełnie</string>
     <string name="settings_restore_stock_image">Przywróć obraz fabryczny</string>
     <string name="settings_uninstall_temporary">Odinstaluj tymczasowo</string>

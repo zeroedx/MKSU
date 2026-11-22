@@ -105,7 +105,7 @@
     <string name="home_support_title">Dukung Kami</string>
     <string name="home_support_content">MKSU gratis dan sumber terbuka, sekarang dan selamanya. Namun, Anda dapat menunjukkan kepedulian Anda kepada kami dengan memberikan donasi.</string>
     <string name="home_gki_warning">Mulai dari v3.0.0, fungsi mode GKI dibatasi untuk lingkungan pengujian. Kami tidak menyarankan untuk penggunaan harian, dan berkas image tidak akan lagi disediakan.</string>
-    <string name="about_source_code"><![CDATA[Lihat kode sumber di %1$s<br/>Gabung saluran %2$s kami]]></string>
+    <string name="about_source_code"><![CDATA[Lihat kode sumber di %1$s]]></string>
     <string name="profile">Profil aplikasi</string>
     <string name="profile_default">Bawaan</string>
     <string name="profile_template">Templat</string>
@@ -163,10 +163,6 @@
     <string name="app_profile_template_save_failed">Gagal menyimpan templat</string>
     <string name="app_profile_template_import_empty">Papan klip kosong!</string>
     <string name="app_profile_affects_following_apps">Memengaruhi aplikasi berikut</string>
-    <string name="settings_check_update">Periksa pembaruan</string>
-    <string name="settings_check_update_summary">Secara otomatis memeriksa pembaruan saat membuka aplikasi</string>
-    <string name="settings_enable_predictive_back">Gestur kembali prediktif</string>
-    <string name="settings_enable_predictive_back_summary">Aktifkan dukungan gestur kembali prediktif</string>
     <string name="settings_enable_swipe_dismiss">Gestur geser kembali</string>
     <string name="settings_enable_swipe_dismiss_summary">Geser dari tepi layar untuk kembali ke halaman sebelumnya</string>
     <string name="settings_pager_gesture_mode">Mode gestur halaman</string>

@@ -46,7 +46,7 @@
     <string name="home_click_to_learn_kernelsu">เรียนรู้วิธีการติดตั้ง MKSU และวิธีใช้งานโมดูลต่าง ๆ</string>
     <string name="home_support_title">สนับสนุนพวกเรา</string>
     <string name="home_support_content">MKSU จะเป็นโอเพ่นซอร์สฟรีเสมอ อย่างไรก็ตาม คุณสามารถแสดงความห่วงใยได้ด้วยการบริจาค</string>
-    <string name="about_source_code"><![CDATA[ดูซอร์สโค้ดได้ที่ %1$s<br/>เข้าร่วม %2$s channel]]></string>
+    <string name="about_source_code"><![CDATA[ดูซอร์สโค้ดได้ที่ %1$s]]></string>
     <string name="profile_custom">กำหนดเอง</string>
     <string name="profile_default">ค่าเริ่มต้น</string>
     <string name="profile_template">เทมเพลต</string>
@@ -100,8 +100,6 @@
     <string name="app_profile_template_view">ดูเทมเพลต</string>
     <string name="open">เปิด</string>
     <string name="grant_root_failed">ไม่สามารถให้สิทธิ์รูทได้!</string>
-    <string name="settings_check_update">ตรวจสอบการอัปเดต</string>
-    <string name="settings_check_update_summary">ตรวจสอบการอัปเดตโดยอัตโนมัติเมื่อเปิดแอป</string>
     <string name="enable_web_debugging">การแก้ไขข้อบกพร่อง WebView</string>
     <string name="select_kmi">เลือก KMI</string>
     <string name="install_next">ต่อไป</string>

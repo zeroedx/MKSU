@@ -218,11 +218,13 @@ class MainActivity : ComponentActivity() {
                     } else {
                         NavSwipeDirection.None
                     }
-                    // Only the animation style picks the transition. The predictive-back switch is a
-                    // manifest flag for the system gesture, and must not turn regular back into an
-                    // instant jump.
-                    val navTransition = remember(uiState.predictiveBackAnimation) {
-                        navTransitionFor(uiState.predictiveBackAnimation)
+                    // The switch gates the gesture-following animation; the style picks which one.
+                    // Neither may turn regular back into an instant jump.
+                    val navTransition = remember(
+                        uiState.enablePredictiveBack,
+                        uiState.predictiveBackAnimation,
+                    ) {
+                        navTransitionFor(uiState.enablePredictiveBack, uiState.predictiveBackAnimation)
                     }
                     val flashRoute = navigator.current() as? Route.Flash
                     var flashBackEnabled by remember(flashRoute) { mutableStateOf(false) }

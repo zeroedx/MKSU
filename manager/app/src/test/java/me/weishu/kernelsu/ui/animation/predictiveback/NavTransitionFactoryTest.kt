@@ -51,4 +51,23 @@ class NavTransitionFactoryTest {
         assertEquals(transitions.size, transitions.toSet().size)
         assertEquals(NoPredictiveBackTransition, navTransitionFor(PREDICTIVE_BACK_NONE))
     }
+
+    @Test
+    fun `the switch gates the follow animation but never plain back`() {
+        val styles = listOf(
+            PREDICTIVE_BACK_MIUIX,
+            PREDICTIVE_BACK_AOSP,
+            PREDICTIVE_BACK_SCALE,
+            PREDICTIVE_BACK_CLASSIC,
+            PREDICTIVE_BACK_NONE,
+            "default",
+            "slide",
+        )
+        styles.forEach { style ->
+            assertEquals(NoPredictiveBackTransition, navTransitionFor(false, style))
+        }
+        assertEquals(AospNavTransition, navTransitionFor(true, PREDICTIVE_BACK_AOSP))
+        assertEquals(ClassicNavTransition, navTransitionFor(true, PREDICTIVE_BACK_CLASSIC))
+        assertEquals(NavTransitions.MiuixDefault, navTransitionFor(true, PREDICTIVE_BACK_MIUIX))
+    }
 }

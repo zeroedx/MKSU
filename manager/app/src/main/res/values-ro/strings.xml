@@ -46,7 +46,7 @@
     <string name="home_click_to_learn_kernelsu">Află cum să instalezi MKSU și să utilizezi module</string>
     <string name="home_support_title">Suport</string>
     <string name="home_support_content">MKSU este, și va fi întotdeauna, gratuit și cu codul sursă deschis. Cu toate acestea, ne poți arăta că îți pasă făcând o donație.</string>
-    <string name="about_source_code"><![CDATA[Vezi codul sursă la %1$s<br/>Alătură-te canalului nostru %2$s]]></string>
+    <string name="about_source_code"><![CDATA[Vezi codul sursă la %1$s]]></string>
     <string name="profile_default">Implicit</string>
     <string name="profile_template">Șablon</string>
     <string name="profile_custom">Personalizat</string>
@@ -98,8 +98,6 @@
     <string name="app_profile_template_delete">Șterge</string>
     <string name="app_profile_template_import_empty">Clipboard-ul este gol!</string>
     <string name="app_profile_template_view">Vizualizare șablon</string>
-    <string name="settings_check_update">Verifică actualizarea</string>
-    <string name="settings_check_update_summary">Se verifică automat actualizările când deschizi aplicația</string>
     <string name="enable_web_debugging">Activează depanarea WebView</string>
     <string name="enable_web_debugging_summary">Poate fi folosit pentru a depana WebUI, activează numai când este necesar.</string>
     <string name="grant_root_failed">Nu s-a acordat acces root!</string>

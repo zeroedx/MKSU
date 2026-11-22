@@ -58,7 +58,7 @@
     <string name="home_learn_kernelsu">MKSU verstehen</string>
     <string name="safe_mode">Sicherer Modus</string>
     <string name="reboot_to_apply">Neustarten, damit Änderungen wirksam werden</string>
-    <string name="about_source_code"><![CDATA[Quellcode einsehen unter %1$s<br/>Unserem %2$s-Kanal beitreten]]></string>
+    <string name="about_source_code"><![CDATA[Quellcode einsehen unter %1$s]]></string>
     <string name="profile_name">Profilname</string>
     <string name="profile_namespace">Namespace einhängen</string>
     <string name="profile_groups">Gruppen</string>
@@ -116,8 +116,6 @@
 \nFortfahren?</string>
     <string name="grant_root_failed">Root-Zugriff konnte nicht gewährt werden!</string>
     <string name="open">Öffnen</string>
-    <string name="settings_check_update">Auf Aktualisierungen prüfen</string>
-    <string name="settings_check_update_summary">Prüfe automatisch auf Aktualisierungen, wenn die App geöffnet wird.</string>
     <string name="settings_uninstall_temporary">Temporär deinstallieren</string>
     <string name="settings_uninstall">Deinstallieren</string>
     <string name="settings_uninstall_permanent_message">MKSU (Root und alle Module) vollständig und dauerhaft deinstallieren.</string>

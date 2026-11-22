@@ -51,7 +51,7 @@
     <string name="home_click_to_learn_kernelsu">Научи как да изтеглите MKSU и да използвате модули.</string>
     <string name="home_support_title">Помогнете Ни</string>
     <string name="home_support_content">MKSU си е, и винаги ще е безплатен, и с отворен код. Обаче, можете да ни покажете че се интересувате като ни направите дарение.</string>
-    <string name="about_source_code"><![CDATA[View source code at %1$s<br/>Присъединете се към нашия%2$s канал]]></string>
+    <string name="about_source_code"><![CDATA[View source code at %1$s]]></string>
     <string name="profile_default">По подразбиране</string>
     <string name="profile_template">Шаблон</string>
     <string name="profile_custom">По избор</string>
@@ -105,8 +105,6 @@
     <string name="app_profile_template_save_failed">Неуспешно запазване на шаблон</string>
     <string name="app_profile_template_import_empty">Клипборда е празен!</string>
     <string name="app_profile_affects_following_apps">Засегва следните приложения</string>
-    <string name="settings_check_update">Провери за актуализаций</string>
-    <string name="settings_check_update_summary">Автоматично провери за актуализаций когато отворите приложението.</string>
     <string name="settings_module_check_update">Провери за актуализаций на модулите</string>
     <string name="grant_root_failed">Неуспешно даване на root права!</string>
     <string name="action">Действие</string>

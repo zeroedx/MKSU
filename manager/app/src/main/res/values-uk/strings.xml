@@ -46,7 +46,7 @@
     <string name="home_click_to_learn_kernelsu">Дізнайтеся, як інсталювати MKSU і використовувати модулі.</string>
     <string name="home_support_title">Підтримати нас</string>
     <string name="home_support_content">MKSU є і завжди буде безкоштовним програмним забезпеченням з відкритим вихідним кодом. Однак ви можете показати нам, що вам небайдужа наша допомога, зробивши пожертву.</string>
-    <string name="about_source_code"><![CDATA[Переглянути вихідний код на %1$s<br/>Приєднуйтесь до нашого каналу %2$s]]></string>
+    <string name="about_source_code"><![CDATA[Переглянути вихідний код на %1$s]]></string>
     <string name="profile">Профіль додатка</string>
     <string name="profile_default">Типовий</string>
     <string name="profile_template">Шаблон</string>
@@ -102,8 +102,6 @@
     <string name="enable_web_debugging">Налагодження WebView</string>
     <string name="select_kmi">Виберіть KMI</string>
     <string name="install_next">Далі</string>
-    <string name="settings_check_update">Перевірити наявність оновлень</string>
-    <string name="settings_check_update_summary">Автоматична перевірка оновлень під час відкриття програми.</string>
     <string name="enable_web_debugging_summary">Можна використовувати для налагодження веб-інтерфейсу. Вмикайте лише за потреби.</string>
     <string name="direct_install">Пряме встановлення (рекомендовано)</string>
     <string name="select_file">Вибрати і пропатчити файл</string>

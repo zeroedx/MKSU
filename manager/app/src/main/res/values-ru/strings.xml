@@ -48,7 +48,7 @@
     <string name="home_click_to_learn_kernelsu">Узнайте, как установить MKSU и использовать модули.</string>
     <string name="home_support_title">Поддержите нас</string>
     <string name="home_support_content">MKSU был и всегда будет бесплатным и открытым проектом. Однако Вы всегда можете поддержать нас, отправив небольшое пожертвование.</string>
-    <string name="about_source_code"><![CDATA[Посмотреть исходный код на %1$s<br/>Присоединяйтесь к нашему %2$s каналу]]></string>
+    <string name="about_source_code"><![CDATA[Посмотреть исходный код на %1$s]]></string>
     <string name="profile" translatable="false">App Profile</string>
     <!--Don't translate this string!-->
     <string name="profile_default">По умолчанию</string>
@@ -102,8 +102,6 @@
     <string name="app_profile_template_delete">Удалить</string>
     <string name="app_profile_template_import_empty">Буфер обмена пуст!</string>
     <string name="app_profile_template_view">Просмотр шаблона</string>
-    <string name="settings_check_update">Проверять наличие обновлений</string>
-    <string name="settings_check_update_summary">Автоматическая проверка обновлений при открытии приложения.</string>
     <string name="grant_root_failed">Не удалось выдать root!</string>
     <string name="open">Открыть</string>
     <string name="enable_web_debugging">Отладка WebView</string>

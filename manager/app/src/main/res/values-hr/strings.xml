@@ -47,7 +47,7 @@
     <string name="home_click_to_learn_kernelsu">Naučite kako da instalirate MKSU i da koristite module.</string>
     <string name="home_support_title">Podržite Nas</string>
     <string name="home_support_content">MKSU je i uvijek će biti besplatan i otvorenog koda. Međutim, možete nam pokazati da vam je stalo donacijom.</string>
-    <string name="about_source_code"><![CDATA[Pogledajte izvor na %1$s<br/>Pridružite se našem %2$s kanalu]]></string>
+    <string name="about_source_code"><![CDATA[Pogledajte izvor na %1$s]]></string>
     <string name="profile_default">Zadano</string>
     <string name="profile_template">Šablon</string>
     <string name="profile_custom">Prilagođeno</string>
@@ -102,8 +102,6 @@
     <string name="app_profile_template_import_success">Uspješno uvezeno</string>
     <string name="app_profile_template_save_failed">Spremanje predloška nije uspjelo</string>
     <string name="app_profile_template_import_empty">Međuspremnik je prazan!</string>
-    <string name="settings_check_update">Provjeri za ažuriranja</string>
-    <string name="settings_check_update_summary">Automatski provjeri za ažuriranja prilikom otvaranja aplikacije.</string>
     <string name="grant_root_failed">Dodjeljivanje root pristupa nije uspjelo!</string>
     <string name="action">Radnja</string>
     <string name="open">Otvori</string>

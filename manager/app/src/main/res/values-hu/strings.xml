@@ -19,8 +19,7 @@
     <string name="home_learn_kernelsu">Tudjon meg többet a MKSU-ról</string>
     <string name="home_click_to_learn_kernelsu">Ismerje meg a MKSU telepítését és a modulok használatát</string>
     <string name="home_support_title">Támogasson minket</string>
-    <string name="about_source_code">Tekintse meg a forráskódot a %1$s-on<br/>
-Csatlakozzon a %2$s csatornánkhoz</string>
+    <string name="about_source_code"><![CDATA[Tekintse meg a forráskódot a %1$s-on]]></string>
     <string name="profile_default">Alapértelmezett</string>
     <string name="profile_template">Sablon</string>
     <string name="profile_custom">Egyedi</string>
@@ -128,8 +127,6 @@ Csatlakozzon a %2$s csatornánkhoz</string>
     <string name="direct_install">Közvetlen telepítés (Ajánlott)</string>
     <string name="install_inactive_slot_warning">Az eszköze **KÉNYSZERÍTETTEN** a jelenleg inaktív helyről fog indulni újraindítás után!\nCsak az OTA befejezése után használja.\nFolytatja?</string>
     <string name="settings_restore_stock_image_message">Állítsa vissza a gyári képfájlt (ha létezik biztonsági mentés). Általában OTA előtt használják. Ha a MKSU-t szeretné eltávolítani, használja a végleges eltávolítás opciót.</string>
-    <string name="settings_check_update">Frissítés ellenőrzése</string>
-    <string name="settings_check_update_summary">Automatikusan keressen frissítéseket az alkalmazás megnyitásakor</string>
     <string name="log_saved">Mentett naplók</string>
     <string name="settings_sucompat">su bináris átirányítása</string>
     <string name="settings_sucompat_summary">Lehetővé teszi az App Profile-ban Superuser engedéllyel rendelkező alkalmazások számára, hogy superuser shell-t kapjanak a /system/bin/su végrehajtásával; csak új folyamatoknál hatékony.</string>
