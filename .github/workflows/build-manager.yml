@@ -244,6 +244,7 @@ jobs:
               -PMKSU_CERT_SHA256="$MKSU_CERT_SHA256"
           fi
 
+      # Repack input; on main it is removed again by cleanup-apk-artifacts so main keeps no downloadable APK.
       - name: Upload build artifact
         if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
@@ -263,7 +264,8 @@ jobs:
     if: always() && needs.build-manager.result == 'success' && needs.build-ksud.result == 'success' && needs.generate-key.result == 'success'
     runs-on: ubuntu-latest
     env:
-      MANAGER_ARCH: ${{ inputs.manager_arch || 'arm64-v8a,x86_64' }}
+      # main ships one arm64-v8a build to Telegram; dev/PR keep the dual-ABI test package.
+      MANAGER_ARCH: ${{ inputs.manager_arch || (github.ref == 'refs/heads/main' && 'arm64-v8a' || 'arm64-v8a,x86_64') }}
 
     steps:
       - name: Checkout
@@ -386,8 +388,9 @@ jobs:
             -S "$SIGN_KEY_PASSWORD" \
             --strip
 
+      # dev/PR/tag keep the test package; main ships through Telegram only.
       - name: Upload build artifact
-        if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
+        if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && github.ref == 'refs/heads/dev') || github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
         with:
           name: manager
@@ -452,7 +455,7 @@ jobs:
             exit 1
           fi
 
-          echo "[+] Uploading $(basename "$APK") (versionCode $VERSION) to $CHAT_ID"
+          echo "[+] Uploading $(basename "$APK") (versionCode $VERSION, arch $MANAGER_ARCH) to $CHAT_ID"
           export VERSION
 
           if ! python3 -m pip install --quiet telethon; then
@@ -466,3 +469,38 @@ jobs:
             echo "[-] Telegram upload failed"
             exit 1
           fi
+
+  cleanup-apk-artifacts:
+    needs: [repack-manager]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete APK artifacts of this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          list_apk_artifacts() {
+            gh api --paginate --slurp "/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+              --jq '.[].artifacts[] | select(.name == "manager-gradle" or .name == "manager") | "\(.id) \(.name)"'
+          }
+
+          list_apk_artifacts > "$RUNNER_TEMP/apk-artifacts.txt"
+          if [ ! -s "$RUNNER_TEMP/apk-artifacts.txt" ]; then
+            echo "No APK artifacts to delete"
+          else
+            while read -r id name; do
+              echo "Deleting artifact $name ($id)"
+              gh api -X DELETE "/repos/$REPO/actions/artifacts/$id"
+            done < "$RUNNER_TEMP/apk-artifacts.txt"
+          fi
+
+          remaining=$(list_apk_artifacts | wc -l)
+          if [ "$remaining" -ne 0 ]; then
+            echo "::error::$remaining APK artifact(s) still downloadable for this run"
+            exit 1
+          fi
+          echo "No APK artifacts remain for this run"
