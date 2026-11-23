@@ -11,8 +11,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -24,7 +22,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +42,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -67,7 +63,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,18 +74,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -102,7 +96,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
@@ -113,6 +106,7 @@ import me.weishu.kernelsu.data.model.Module
 import me.weishu.kernelsu.data.model.ModuleUpdateInfo
 import me.weishu.kernelsu.data.repository.isSoftRebootPreferred
 import me.weishu.kernelsu.ui.component.ListPopupDefaults
+import me.weishu.kernelsu.ui.component.ModuleIcon
 import me.weishu.kernelsu.ui.component.ObserveAsEvents
 import me.weishu.kernelsu.ui.component.ScrollToTopOnChange
 import me.weishu.kernelsu.ui.component.SearchStatus
@@ -121,8 +115,8 @@ import me.weishu.kernelsu.ui.component.dialog.rememberLoadingDialog
 import me.weishu.kernelsu.ui.component.miuix.SearchBarFake
 import me.weishu.kernelsu.ui.component.miuix.SearchBox
 import me.weishu.kernelsu.ui.component.miuix.SearchPager
-import me.weishu.kernelsu.ui.component.rebootlistpopup.RebootListPopupMiuix
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
+import me.weishu.kernelsu.ui.theme.LocalModuleDescriptionMaxLines
 import me.weishu.kernelsu.ui.theme.isInDarkTheme
 import me.weishu.kernelsu.ui.util.BlurredBar
 import me.weishu.kernelsu.ui.util.getFileName
@@ -131,7 +125,6 @@ import me.weishu.kernelsu.ui.util.rememberBlurBackdrop
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownImpl
-import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -154,7 +147,7 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Download
-import top.yukonga.miuix.kmp.icon.extended.MoreCircle
+import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.icon.extended.Undo
 import top.yukonga.miuix.kmp.icon.extended.UploadCloud
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
@@ -199,8 +192,6 @@ fun ModulePagerMiuix(
     )
 
     val scrollBehavior = MiuixScrollBehavior()
-    var fabVisible by remember { mutableStateOf(true) }
-    var scrollDistance by remember { mutableFloatStateOf(0f) }
     val dynamicTopPadding by remember {
         derivedStateOf { 12.dp * (1f - scrollBehavior.state.collapsedFraction) }
     }
@@ -223,12 +214,53 @@ fun ModulePagerMiuix(
                 html = it.html,
                 confirm = it.confirm,
                 dismiss = it.dismiss,
+                restricted = it.restricted,
             )
         }
     }
 
     val scope = rememberCoroutineScope()
     val snackbarJob = remember { mutableStateOf<Job?>(null) }
+    val moduleInstall = stringResource(id = R.string.module_install)
+    val installConfirmTitle = stringResource(R.string.module)
+    var zipUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val installConfirmDialog = rememberConfirmDialog(
+        onConfirm = {
+            actions.onOpenFlash(zipUris)
+        }
+    )
+    val selectZipLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { activityResult ->
+        val uris = mutableListOf<Uri>()
+        if (activityResult.resultCode != RESULT_OK) {
+            return@rememberLauncherForActivityResult
+        }
+        val data = activityResult.data ?: return@rememberLauncherForActivityResult
+        val clipData = data.clipData
+
+        if (clipData != null) {
+            for (i in 0 until clipData.itemCount) {
+                clipData.getItemAt(i)?.uri?.let { uris.add(it) }
+            }
+        } else {
+            data.data?.let { uris.add(it) }
+        }
+
+        if (uris.size == 1) {
+            actions.onOpenFlash(listOf(uris.first()))
+        } else if (uris.size > 1) {
+            // multiple files selected
+            zipUris = uris
+            val moduleNames = uris.mapIndexed { index, uri -> "\n${index + 1}. ${uri.getFileName(context)}" }.joinToString("")
+            val confirmContent = installPromptWithName.format(moduleNames)
+            installConfirmDialog.showConfirm(
+                title = installConfirmTitle,
+                content = confirmContent
+            )
+        }
+    }
+
     ObserveAsEvents(moduleEvent) { event ->
         when (event) {
             is ModuleEffect.Toast -> {
@@ -263,39 +295,6 @@ fun ModulePagerMiuix(
 
     val listState = rememberLazyListState()
     val refreshTick = remember { mutableIntStateOf(0) }
-    val nestedScrollConnection = remember(uiState.installButtonVisible) {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val isScrolledToEnd =
-                    (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index == listState.layoutInfo.totalItemsCount - 1
-                            && (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.size
-                        ?: 0) < listState.layoutInfo.viewportEndOffset)
-                val delta = available.y
-                if (!isScrolledToEnd) {
-                    scrollDistance += delta
-                    if (scrollDistance < -50f) {
-                        if (fabVisible) fabVisible = false
-                        scrollDistance = 0f
-                    } else if (scrollDistance > 50f) {
-                        if (!fabVisible) fabVisible = true
-                        scrollDistance = 0f
-                    }
-                }
-                return Offset.Zero
-            }
-        }
-    }
-    val offsetHeight by animateDpAsState(
-        targetValue = if (fabVisible) 0.dp else 180.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding(),
-        animationSpec = tween(durationMillis = 350)
-    )
-    // The scaffold stacks the snackbar above the FAB slot's measured height, which the
-    // offset-based hide animation does not shrink; slide the snackbar down by the FAB's
-    // footprint (60dp min height + 12dp scaffold spacing) when the FAB is hidden.
-    val snackbarOffsetHeight by animateDpAsState(
-        targetValue = if (fabVisible) 0.dp else 72.dp,
-        animationSpec = tween(durationMillis = 350)
-    )
 
     val backdrop = rememberBlurBackdrop(enableBlur)
     val blurActive = backdrop != null
@@ -309,6 +308,24 @@ fun ModulePagerMiuix(
                         color = barColor,
                         title = stringResource(R.string.module),
                         actions = {
+                            if (uiState.installButtonVisible) {
+                                IconButton(
+                                    onClick = {
+                                        // Select the zip files to install
+                                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                            type = "application/zip"
+                                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                        }
+                                        selectZipLauncher.launch(intent)
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Add,
+                                        tint = colorScheme.onSurface,
+                                        contentDescription = moduleInstall
+                                    )
+                                }
+                            }
                             Box {
                                 val showTopPopup = remember { mutableStateOf(false) }
                                 IconButton(
@@ -316,7 +333,7 @@ fun ModulePagerMiuix(
                                     holdDownState = showTopPopup.value
                                 ) {
                                     Icon(
-                                        imageVector = MiuixIcons.MoreCircle,
+                                        imageVector = MiuixIcons.Sort,
                                         tint = colorScheme.onSurface,
                                         contentDescription = null
                                     )
@@ -354,9 +371,6 @@ fun ModulePagerMiuix(
                                     }
                                 )
                             }
-                            RebootListPopupMiuix(
-                                alignment = PopupPositionProvider.Align.TopEnd,
-                            )
                         },
                         navigationIcon = {
                             IconButton(
@@ -399,74 +413,6 @@ fun ModulePagerMiuix(
                 }
             }
         },
-        floatingActionButton = {
-            if (uiState.installButtonVisible) {
-                val moduleInstall = stringResource(id = R.string.module_install)
-                val confirmTitle = stringResource(R.string.module)
-                var zipUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
-                val confirmDialog = rememberConfirmDialog(
-                    onConfirm = {
-                        actions.onOpenFlash(zipUris)
-                    }
-                )
-                val selectZipLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartActivityForResult()
-                ) { activityResult ->
-                    val uris = mutableListOf<Uri>()
-                    if (activityResult.resultCode != RESULT_OK) {
-                        return@rememberLauncherForActivityResult
-                    }
-                    val data = activityResult.data ?: return@rememberLauncherForActivityResult
-                    val clipData = data.clipData
-
-                    if (clipData != null) {
-                        for (i in 0 until clipData.itemCount) {
-                            clipData.getItemAt(i)?.uri?.let { uris.add(it) }
-                        }
-                    } else {
-                        data.data?.let { uris.add(it) }
-                    }
-
-                    if (uris.size == 1) {
-                        actions.onOpenFlash(listOf(uris.first()))
-                    } else if (uris.size > 1) {
-                        // multiple files selected
-                        zipUris = uris
-                        val moduleNames = uris.mapIndexed { index, uri -> "\n${index + 1}. ${uri.getFileName(context)}" }.joinToString("")
-                        val confirmContent = installPromptWithName.format(moduleNames)
-                        confirmDialog.showConfirm(
-                            title = confirmTitle,
-                            content = confirmContent
-                        )
-                    }
-                }
-                FloatingActionButton(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(x = 0, y = offsetHeight.roundToPx())
-                        }
-                        .padding(bottom = bottomInnerPadding + 20.dp, end = 20.dp)
-                        .border(0.05.dp, colorScheme.outline.copy(alpha = 0.5f), CircleShape),
-                    shadowElevation = 0.dp,
-                    onClick = {
-                        // Select the zip files to install
-                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                            type = "application/zip"
-                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        }
-                        selectZipLauncher.launch(intent)
-                    },
-                    content = {
-                        Icon(
-                            Icons.Rounded.Add,
-                            moduleInstall,
-                            modifier = Modifier.size(40.dp),
-                            tint = colorScheme.onPrimary
-                        )
-                    },
-                )
-            }
-        },
         popupHost = {
             searchStatus.SearchPager(
                 onSearchStatusChange = actions.onSearchStatusChange,
@@ -480,6 +426,8 @@ fun ModulePagerMiuix(
                         .overScrollVertical(),
                     modules = uiState.searchResults,
                     updateInfoMap = uiState.updateInfo,
+                    showMoreModuleInfo = uiState.showMoreModuleInfo,
+                    moduleIcons = uiState.moduleIcons,
                     actions = actions,
                     onModuleAddShortcut = ::onModuleAddShortcut,
                     contentPadding = PaddingValues(
@@ -491,109 +439,105 @@ fun ModulePagerMiuix(
                 )
             }
         },
-        snackbarHost = {
-            SnackbarHost(
-                state = snackbarHostState,
-                modifier = if (uiState.installButtonVisible) {
-                    Modifier.offset { IntOffset(x = 0, y = snackbarOffsetHeight.roundToPx()) }
-                } else {
-                    // No FAB slot to stack above: keep the snackbar clear of the main bottom bar.
-                    Modifier.padding(bottom = bottomInnerPadding + 20.dp)
-                },
-            )
-        },
         contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal)
     ) { innerPadding ->
-        if (uiState.magiskInstalled) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    stringResource(R.string.module_magisk_conflict),
-                    textAlign = TextAlign.Center,
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (uiState.magiskInstalled) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        stringResource(R.string.module_magisk_conflict),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                return@Box
             }
-            return@Scaffold
-        }
-        val layoutDirection = LocalLayoutDirection.current
-        searchStatus.SearchBox {
-            val pullToRefreshState = rememberPullToRefreshState()
-            val refreshTexts = listOf(
-                stringResource(R.string.refresh_pulling),
-                stringResource(R.string.refresh_release),
-                stringResource(R.string.refresh_refresh),
-                stringResource(R.string.refresh_complete),
-            )
-            val contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding() + 6.dp,
-                start = innerPadding.calculateStartPadding(layoutDirection),
-                end = innerPadding.calculateEndPadding(layoutDirection),
-                bottom = bottomInnerPadding,
-            )
-            PullToRefresh(
-                isRefreshing = uiState.isRefreshing,
-                pullToRefreshState = pullToRefreshState,
-                onRefresh = {
-                    actions.onRefresh()
-                    refreshTick.intValue++
-                },
-                refreshTexts = refreshTexts,
-                contentPadding = contentPadding,
-            ) {
-                if (modules.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = innerPadding.calculateTopPadding(),
-                                start = innerPadding.calculateStartPadding(layoutDirection),
-                                end = innerPadding.calculateEndPadding(layoutDirection),
-                                bottom = bottomInnerPadding
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // The refresh indicator doubles as the first-load hint;
-                        // only announce emptiness once loading has finished.
-                        if (uiState.hasLoaded) {
-                            Text(
-                                stringResource(R.string.module_empty),
-                                textAlign = TextAlign.Center,
-                                color = Color.Gray,
+            val layoutDirection = LocalLayoutDirection.current
+            searchStatus.SearchBox {
+                val pullToRefreshState = rememberPullToRefreshState()
+                val refreshTexts = listOf(
+                    stringResource(R.string.refresh_pulling),
+                    stringResource(R.string.refresh_release),
+                    stringResource(R.string.refresh_refresh),
+                    stringResource(R.string.refresh_complete),
+                )
+                val contentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding() + 6.dp,
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    end = innerPadding.calculateEndPadding(layoutDirection),
+                    bottom = bottomInnerPadding + 12.dp,
+                )
+                PullToRefresh(
+                    isRefreshing = uiState.isRefreshing,
+                    pullToRefreshState = pullToRefreshState,
+                    onRefresh = {
+                        actions.onRefresh()
+                        refreshTick.intValue++
+                    },
+                    refreshTexts = refreshTexts,
+                    contentPadding = contentPadding,
+                ) {
+                    if (modules.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    top = innerPadding.calculateTopPadding(),
+                                    start = innerPadding.calculateStartPadding(layoutDirection),
+                                    end = innerPadding.calculateEndPadding(layoutDirection),
+                                    bottom = bottomInnerPadding
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // The refresh indicator doubles as the first-load hint;
+                            // only announce emptiness once loading has finished.
+                            if (uiState.hasLoaded) {
+                                Text(
+                                    stringResource(R.string.module_empty),
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Gray,
+                                )
+                            }
+                        }
+                    } else {
+                        val latestModules = rememberUpdatedState(modules)
+                        val latestRefreshing = rememberUpdatedState(uiState.isRefreshing)
+                        ScrollToTopOnChange(
+                            listState,
+                            uiState.sortEnabledFirst,
+                            uiState.sortActionFirst,
+                            refreshTick.intValue,
+                            isBusy = { latestRefreshing.value },
+                        ) { latestModules.value }
+                        Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
+                            ModuleList(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .scrollEndHaptic()
+                                    .overScrollVertical()
+                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                                modules = modules,
+                                updateInfoMap = uiState.updateInfo,
+                                showMoreModuleInfo = uiState.showMoreModuleInfo,
+                                moduleIcons = uiState.moduleIcons,
+                                actions = actions,
+                                onModuleAddShortcut = { module, type ->
+                                    onModuleAddShortcut(module, type)
+                                },
+                                contentPadding = contentPadding,
+                                listState = listState,
                             )
                         }
                     }
-                } else {
-                    val latestModules = rememberUpdatedState(modules)
-                    val latestRefreshing = rememberUpdatedState(uiState.isRefreshing)
-                    ScrollToTopOnChange(
-                        listState,
-                        uiState.sortEnabledFirst,
-                        uiState.sortActionFirst,
-                        refreshTick.intValue,
-                        isBusy = { latestRefreshing.value },
-                    ) { latestModules.value }
-                    Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
-                        ModuleList(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .scrollEndHaptic()
-                                .overScrollVertical()
-                                .nestedScroll(scrollBehavior.nestedScrollConnection)
-                                .nestedScroll(nestedScrollConnection),
-                            modules = modules,
-                            updateInfoMap = uiState.updateInfo,
-                            actions = actions,
-                            onModuleAddShortcut = { module, type ->
-                                onModuleAddShortcut(module, type)
-                            },
-                            contentPadding = contentPadding,
-                            listState = listState,
-                        )
-                    }
                 }
+            }
+
+            ModuleSnackbar(bottomBarPadding = bottomInnerPadding) {
+                SnackbarHost(state = snackbarHostState)
             }
         }
     }
@@ -628,7 +572,7 @@ private fun ModuleShortcutDialog(
     fun copyShortcutUrl() {
         val url = shortcutState.buildShortcutUrl() ?: return
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("KernelSU deep link", url))
+        clipboard.setPrimaryClip(ClipData.newPlainText("MKSU deep link", url))
         Toast.makeText(context, resources.getString(R.string.module_shortcut_scheme_copied), Toast.LENGTH_SHORT).show()
     }
 
@@ -740,6 +684,8 @@ private fun ModuleList(
     modifier: Modifier = Modifier,
     modules: List<Module>,
     updateInfoMap: Map<String, ModuleUpdateInfo>,
+    showMoreModuleInfo: Boolean,
+    moduleIcons: Map<String, String>,
     actions: ModuleActions,
     onModuleAddShortcut: (Module, ShortcutType) -> Unit,
     contentPadding: PaddingValues,
@@ -764,6 +710,8 @@ private fun ModuleList(
                 ModuleItem(
                     module = module,
                     updateUrl = moduleUpdateInfo.downloadUrl,
+                    showMoreModuleInfo = showMoreModuleInfo,
+                    repoIconUrl = moduleIcons[module.id],
                     onUninstall = {
                         actions.onRequestUninstallConfirmation(currentModuleState.value)
                     },
@@ -810,6 +758,8 @@ private fun ModuleList(
 fun ModuleItem(
     module: Module,
     updateUrl: String,
+    showMoreModuleInfo: Boolean,
+    repoIconUrl: String?,
     onUndoUninstall: () -> Unit,
     onUninstall: () -> Unit,
     onCheckChanged: (Boolean) -> Unit,
@@ -825,16 +775,20 @@ fun ModuleItem(
     val hasUpdate = updateUrl.isNotEmpty()
     val textDecoration = if (module.remove) TextDecoration.LineThrough else null
     val hasDescription = module.description.isNotBlank()
+    val maxLinesLimit = LocalModuleDescriptionMaxLines.current
     var expanded by rememberSaveable(module.id) { mutableStateOf(false) }
+    val updateJsonCopiedMessage = stringResource(R.string.module_update_json_copied)
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp),
         insideMargin = PaddingValues(16.dp),
-        onClick = {
-            if (hasDescription) expanded = !expanded
-        }
+        onClick = if (hasDescription) {
+            { expanded = !expanded }
+        } else null
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -848,49 +802,59 @@ fun ModuleItem(
                 val moduleVersion = stringResource(id = R.string.module_version)
                 val moduleAuthor = stringResource(id = R.string.module_author)
 
-                SubcomposeLayout { constraints ->
-                    val spacingPx = 6.dp.roundToPx()
-                    var nameTextLayout: TextLayoutResult? = null
-                    val metaPlaceable = if (module.metamodule) {
-                        subcompose("meta") {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    ModuleIcon(
+                        module = module,
+                        repoIconUrl = repoIconUrl,
+                        size = 20.dp,
+                    )
+                    SubcomposeLayout(modifier = Modifier.weight(1f, fill = false)) { constraints ->
+                        val spacingPx = 6.dp.roundToPx()
+                        var nameTextLayout: TextLayoutResult? = null
+                        val metaPlaceable = if (module.metamodule) {
+                            subcompose("meta") {
+                                Text(
+                                    text = "META",
+                                    fontSize = 12.sp,
+                                    color = updateTint,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(updateBg)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontWeight = FontWeight(750),
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }.first().measure(Constraints(0, constraints.maxWidth, 0, constraints.maxHeight))
+                        } else null
+
+                        val reserved = (metaPlaceable?.width ?: 0) + if (metaPlaceable != null) spacingPx else 0
+                        val nameMax = (constraints.maxWidth - reserved).coerceAtLeast(0)
+                        val namePlaceable = subcompose("name") {
                             Text(
-                                text = "META",
-                                fontSize = 12.sp,
-                                color = updateTint,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(updateBg)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                                fontWeight = FontWeight(750),
-                                maxLines = 1,
-                                softWrap = false
+                                text = module.name,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight(550),
+                                color = colorScheme.onSurface,
+                                textDecoration = textDecoration,
+                                onTextLayout = { nameTextLayout = it }
                             )
-                        }.first().measure(Constraints(0, constraints.maxWidth, 0, constraints.maxHeight))
-                    } else null
+                        }.first().measure(Constraints(constraints.minWidth, nameMax, constraints.minHeight, constraints.maxHeight))
 
-                    val reserved = (metaPlaceable?.width ?: 0) + if (metaPlaceable != null) spacingPx else 0
-                    val nameMax = (constraints.maxWidth - reserved).coerceAtLeast(0)
-                    val namePlaceable = subcompose("name") {
-                        Text(
-                            text = module.name,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight(550),
-                            color = colorScheme.onSurface,
-                            textDecoration = textDecoration,
-                            onTextLayout = { nameTextLayout = it }
-                        )
-                    }.first().measure(Constraints(constraints.minWidth, nameMax, constraints.minHeight, constraints.maxHeight))
+                        val width = (namePlaceable.width + reserved).coerceIn(constraints.minWidth, constraints.maxWidth)
+                        val height = maxOf(namePlaceable.height, metaPlaceable?.height ?: 0)
 
-                    val width = (namePlaceable.width + reserved).coerceIn(constraints.minWidth, constraints.maxWidth)
-                    val height = maxOf(namePlaceable.height, metaPlaceable?.height ?: 0)
-
-                    layout(width, height) {
-                        namePlaceable.placeRelative(0, 0)
-                        val endX = nameTextLayout?.let { layoutRes ->
-                            val last = (layoutRes.lineCount - 1).coerceAtLeast(0)
-                            layoutRes.getLineRight(last).toInt()
-                        } ?: namePlaceable.width
-                        metaPlaceable?.placeRelative(endX + spacingPx, (height - (metaPlaceable.height)) / 2)
+                        layout(width, height) {
+                            namePlaceable.placeRelative(0, 0)
+                            val endX = nameTextLayout?.let { layoutRes ->
+                                val last = (layoutRes.lineCount - 1).coerceAtLeast(0)
+                                layoutRes.getLineRight(last).toInt()
+                            } ?: namePlaceable.width
+                            metaPlaceable?.placeRelative(endX + spacingPx, (height - (metaPlaceable.height)) / 2)
+                        }
                     }
                 }
                 Text(
@@ -909,6 +873,48 @@ fun ModuleItem(
                     color = colorScheme.onSurfaceVariantSummary,
                     textDecoration = textDecoration
                 )
+                if (module.id.isNotEmpty()) {
+                    Text(
+                        text = "${stringResource(id = R.string.module_id)}: ${module.id}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight(550),
+                        color = colorScheme.onSurfaceVariantSummary,
+                        textDecoration = textDecoration
+                    )
+                }
+                if (showMoreModuleInfo && module.updateJson.isNotEmpty()) {
+                    Text(
+                        text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight(550),
+                        color = colorScheme.primary,
+                        textDecoration = textDecoration,
+                        maxLines = 5,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.combinedClickable(
+                            onClick = {},
+                            onLongClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Update JSON URL", module.updateJson))
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                Toast.makeText(
+                                    context,
+                                    updateJsonCopiedMessage,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    )
+                }
+                module.preinitWarning()?.let {
+                    Text(
+                        text = stringResource(it),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(bottom = 1.dp),
+                        fontWeight = FontWeight(550),
+                        color = colorScheme.error
+                    )
+                }
             }
             Switch(
                 enabled = !module.update,
@@ -920,25 +926,17 @@ fun ModuleItem(
         }
 
         if (hasDescription) {
-            Box(
+            ExpandableDescriptionText(
+                text = module.description,
+                expanded = expanded,
+                maxLinesLimit = maxLinesLimit,
                 modifier = Modifier
-                    .padding(top = 2.dp)
-                    .animateContentSize(
-                        animationSpec = tween(
-                            durationMillis = 250,
-                            easing = FastOutSlowInEasing
-                        )
-                    )
-            ) {
-                Text(
-                    text = module.description,
-                    fontSize = 14.sp,
-                    color = colorScheme.onSurfaceVariantSummary,
-                    overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis,
-                    maxLines = if (expanded) Int.MAX_VALUE else 4,
-                    textDecoration = textDecoration
-                )
-            }
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+                fontSize = 14.sp,
+                color = colorScheme.onSurfaceVariantSummary,
+                textDecoration = textDecoration
+            )
         }
 
         HorizontalDivider(
@@ -949,7 +947,7 @@ fun ModuleItem(
 
         Row {
             AnimatedVisibility(
-                visible = module.enabled && !module.remove && !module.update,
+                visible = module.enabled && !module.remove,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {

@@ -51,7 +51,7 @@ fun ExecuteModuleActionEffect(
             onExit()
             return@LaunchedEffect
         }
-        if (!moduleInfo.enabled || moduleInfo.update || moduleInfo.remove) {
+        if (!moduleInfo.canRunAction) {
             Toast.makeText(context, moduleUnavailable.format(moduleInfo.name), Toast.LENGTH_SHORT).show()
             onExit()
             return@LaunchedEffect
@@ -95,6 +95,7 @@ fun ExecuteModuleActionEffect(
 fun saveLog(
     logContent: StringBuilder,
     scope: CoroutineScope,
+    fileNamePrefix: String = "KernelSU_module_action_log",
     showMessage: (String) -> Unit
 ): () -> Unit {
     return {
@@ -103,7 +104,7 @@ fun saveLog(
             val date = format.format(Date())
             val file = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "KernelSU_module_action_log_${date}.log"
+                "${fileNamePrefix}_${date}.log"
             )
             file.writeText(logContent.toString())
             showMessage("Log saved to ${file.absolutePath}")

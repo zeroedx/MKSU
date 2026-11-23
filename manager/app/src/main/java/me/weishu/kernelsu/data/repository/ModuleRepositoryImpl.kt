@@ -41,7 +41,8 @@ class ModuleRepositoryImpl : ModuleRepository {
                         hasActionScript = obj.optBoolean("action"),
                         metamodule = (obj.optInt("metamodule") != 0) || obj.optBoolean("metamodule"),
                         actionIconPath = obj.optString("actionIcon").takeIf { it.isNotBlank() },
-                        webUiIconPath = obj.optString("webuiIcon").takeIf { it.isNotBlank() }
+                        webUiIconPath = obj.optString("webuiIcon").takeIf { it.isNotBlank() },
+                        preinit = obj.optString("preinit")
                     )
                 }.toList()
         }
@@ -52,7 +53,7 @@ class ModuleRepositoryImpl : ModuleRepository {
             if (!isNetworkAvailable(ksuApp)) {
                 return@runCatching ModuleUpdateInfo.Empty
             }
-            if (module.updateJson.isEmpty() || module.remove || module.update || !module.enabled) {
+            if (!module.canCheckForUpdate) {
                 return@runCatching ModuleUpdateInfo.Empty
             }
 
@@ -81,7 +82,7 @@ class ModuleRepositoryImpl : ModuleRepository {
             if (versionCode <= module.versionCode || zipUrl.isEmpty()) {
                 ModuleUpdateInfo.Empty
             } else {
-                ModuleUpdateInfo(zipUrl, version, changelog)
+                ModuleUpdateInfo(zipUrl, version, changelog, versionCode)
             }
         }
     }

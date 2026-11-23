@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,22 +34,30 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuOpen
+import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.CallToAction
 import androidx.compose.material.icons.rounded.Colorize
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DesignServices
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Pin
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.Swipe
+import androidx.compose.material.icons.rounded.ViewCarousel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,12 +74,15 @@ import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import me.weishu.kernelsu.R
+import me.weishu.kernelsu.ui.animation.predictiveback.predictiveBackAnimationIndex
+import me.weishu.kernelsu.ui.animation.predictiveback.predictiveBackAnimationValue
 import me.weishu.kernelsu.ui.component.bottombar.useNavigationRail
 import me.weishu.kernelsu.ui.component.miuix.ScaleDialog
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.theme.keyColorOptions
 import me.weishu.kernelsu.ui.util.BlurredBar
 import me.weishu.kernelsu.ui.util.rememberBlurBackdrop
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -104,6 +116,14 @@ fun ColorPaletteScreenMiuix(
     val uiState = state.uiState
     val currentColorMode = state.currentColorMode
     val isDark = currentColorMode.isDark || currentColorMode.isSystem && isSystemInDarkTheme()
+    val predictiveBackAnimationItems = listOf(
+        stringResource(R.string.settings_predictive_back_default),
+        stringResource(R.string.settings_predictive_back_aosp),
+        stringResource(R.string.settings_predictive_back_scale),
+        stringResource(R.string.settings_predictive_back_classic),
+        stringResource(R.string.settings_predictive_back_none),
+    )
+    val predictiveBackSelectedIndex = predictiveBackAnimationIndex(uiState.predictiveBackAnimation)
 
     Scaffold(
         topBar = {
@@ -358,10 +378,42 @@ fun ColorPaletteScreenMiuix(
                             .padding(top = 12.dp)
                             .fillMaxWidth(),
                     ) {
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_show_more_module_info),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Info,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_show_more_module_info),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.showMoreModuleInfo,
+                            onCheckedChange = actions.onSetShowMoreModuleInfo
+                        )
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_simple_mode),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Dashboard,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_simple_mode),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.simpleMode,
+                            onCheckedChange = actions.onSetSimpleMode
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             SwitchPreference(
                                 title = stringResource(id = R.string.settings_enable_predictive_back),
-                                summary = stringResource(id = R.string.settings_enable_predictive_back_summary),
                                 startAction = {
                                     Icon(
                                         Icons.AutoMirrored.Rounded.MenuOpen,
@@ -375,7 +427,58 @@ fun ColorPaletteScreenMiuix(
                                     actions.onSetEnablePredictiveBack(it)
                                 }
                             )
+                            OverlayDropdownPreference(
+                                title = stringResource(id = R.string.settings_predictive_back_animation),
+                                summary = stringResource(id = R.string.settings_predictive_back_animation_summary),
+                                items = predictiveBackAnimationItems,
+                                startAction = {
+                                    Icon(
+                                        Icons.Rounded.Animation,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                        contentDescription = stringResource(id = R.string.settings_predictive_back_animation),
+                                        tint = colorScheme.onBackground
+                                    )
+                                },
+                                selectedIndex = predictiveBackSelectedIndex,
+                                onSelectedIndexChange = { index ->
+                                    actions.onSetPredictiveBackAnimation(
+                                        predictiveBackAnimationValue(index)
+                                    )
+                                }
+                            )
                         }
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_enable_swipe_dismiss),
+                            summary = stringResource(id = R.string.settings_enable_swipe_dismiss_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Swipe,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_enable_swipe_dismiss),
+                                    tint = colorScheme.onBackground,
+                                )
+                            },
+                            checked = uiState.enableSwipeDismiss,
+                            onCheckedChange = actions.onSetEnableSwipeDismiss,
+                        )
+                        OverlayDropdownPreference(
+                            title = stringResource(id = R.string.settings_pager_gesture_mode),
+                            items = listOf(
+                                stringResource(id = R.string.settings_pager_gesture_native),
+                                stringResource(id = R.string.settings_pager_gesture_cross_axis),
+                                stringResource(id = R.string.settings_pager_gesture_ios_like),
+                            ),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.ViewCarousel,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_pager_gesture_mode),
+                                    tint = colorScheme.onBackground,
+                                )
+                            },
+                            selectedIndex = uiState.pagerInterceptionMode.coerceIn(0, 2),
+                            onSelectedIndexChange = actions.onSetPagerInterceptionMode,
+                        )
 
                         var sliderValue by remember(uiState.pageScale) { mutableFloatStateOf(uiState.pageScale) }
                         ArrowPreference(
@@ -421,6 +524,48 @@ fun ColorPaletteScreenMiuix(
                             onVolumeChange = {
                                 actions.onSetPageScale(it)
                             }
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        var linesValue by remember(uiState.moduleDescriptionMaxLines) { mutableIntStateOf(uiState.moduleDescriptionMaxLines) }
+                        BasicComponent(
+                            title = stringResource(id = R.string.settings_module_description_max_lines),
+                            summary = stringResource(id = R.string.settings_module_description_max_lines_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Description,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_module_description_max_lines),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            endActions = {
+                                Text(
+                                    text = "$linesValue " + stringResource(R.string.unit_lines),
+                                    color = colorScheme.onSurfaceVariantActions,
+                                )
+                            },
+                            bottomAction = {
+                                Slider(
+                                    value = linesValue.toFloat(),
+                                    onValueChange = {
+                                        linesValue = it.roundToInt()
+                                    },
+                                    onValueChangeFinished = {
+                                        actions.onSetModuleDescriptionMaxLines(linesValue)
+                                    },
+                                    valueRange = 1f..5f,
+                                    showKeyPoints = true,
+                                    keyPoints = listOf(1f, 2f, 3f, 4f, 5f),
+                                    magnetThreshold = 0.25f,
+                                    hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                                )
+                            },
                         )
                     }
                 }

@@ -2,6 +2,7 @@ package me.weishu.kernelsu.ui.screen.module
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
+import me.weishu.kernelsu.data.registry.ExpectedFile
 import me.weishu.kernelsu.data.model.Module
 import me.weishu.kernelsu.data.model.ModuleUpdateInfo
 import me.weishu.kernelsu.ui.component.SearchStatus
@@ -11,6 +12,8 @@ sealed interface ModuleConfirmRequest {
         val module: Module,
         val downloadUrl: String,
         val fileName: String,
+        /** Set when the update is a registry release: size + SHA-256 are enforced. */
+        val expected: ExpectedFile? = null,
     ) : ModuleConfirmRequest
 
     data class Uninstall(
@@ -25,6 +28,8 @@ data class ModuleConfirmDialogState(
     val content: String? = null,
     val markdown: Boolean = false,
     val html: Boolean = false,
+    /** Registry-hosted content: render with JavaScript off and network locked to the registry. */
+    val restricted: Boolean = false,
     val confirm: String? = null,
     val dismiss: String? = null,
 )
@@ -46,11 +51,14 @@ data class ModuleUiState(
     val modules: List<Module> = emptyList(),
     val moduleList: List<Module> = emptyList(),
     val updateInfo: Map<String, ModuleUpdateInfo> = emptyMap(),
+    /** Registry icon URL per module id, read from the cached catalog when the list loads. */
+    val moduleIcons: Map<String, String> = emptyMap(),
     val searchStatus: SearchStatus = SearchStatus(""),
     val searchResults: List<Module> = emptyList(),
     val sortEnabledFirst: Boolean = false,
     val sortActionFirst: Boolean = false,
     val checkModuleUpdate: Boolean = true,
+    val showMoreModuleInfo: Boolean = false,
     val isSafeMode: Boolean = false,
     val magiskInstalled: Boolean = false,
     val confirmDialogState: ModuleConfirmDialogState? = null,

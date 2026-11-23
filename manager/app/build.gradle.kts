@@ -23,10 +23,49 @@ val managerVersionCode = rootProject.extra["managerVersionCode"] as Int
 val managerVersionName = rootProject.extra["managerVersionName"] as String
 
 val isPrBuild = project.findProperty("IS_PR_BUILD")?.toString()?.toBoolean() ?: false
-val defaultManagerPackageName = if (isPrBuild) "me.weishu.kernelsu.pr" else "me.weishu.kernelsu"
-val defaultManagerName = if (isPrBuild) "KernelSU PR" else "KernelSU"
+val mksuReleasePackage = "com.zeroedx.mksu"
+val defaultManagerPackageName = if (isPrBuild) "$mksuReleasePackage.pr" else mksuReleasePackage
+val defaultManagerName = if (isPrBuild) "MKSU PR" else "MKSU"
 val managerPackageName = project.findProperty("KSU_PACKAGE_NAME")?.toString() ?: defaultManagerPackageName
 val managerName = project.findProperty("KSU_NAME")?.toString() ?: defaultManagerName
+val mksuCertSha256 = (project.findProperty("MKSU_CERT_SHA256")
+    ?: System.getenv("MKSU_CERT_SHA256")
+    ?: "")
+    .toString()
+    .replace(":", "")
+    .trim()
+    .lowercase()
+
+fun requireReleaseSigning() {
+    val required = listOf("KEYSTORE_FILE", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD")
+    val missing = required.filter { project.findProperty(it)?.toString().isNullOrBlank() }
+    if (missing.isNotEmpty()) {
+        throw GradleException(
+            "Release signing is not configured (missing: ${missing.joinToString()}). " +
+                "Provide the long-term keystore through GitHub Actions Secrets or " +
+                "the KEYSTORE_FILE/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD Gradle properties. " +
+                "Debug or upstream signing is never used as a fallback."
+        )
+    }
+    val keystore = file(project.property("KEYSTORE_FILE").toString())
+    if (!keystore.isFile) {
+        throw GradleException("Release keystore does not exist: $keystore")
+    }
+    if (mksuCertSha256.isBlank() || mksuCertSha256.length != 64 || mksuCertSha256.any { it !in "0123456789abcdef" }) {
+        throw GradleException(
+            "MKSU_CERT_SHA256 must be the SHA-256 fingerprint of the release certificate " +
+                "used by the manager and the kernel module."
+        )
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val buildingRelease = allTasks.any {
+        it.project == project && it.name.contains("Release", ignoreCase = true)
+    }
+    if (buildingRelease) requireReleaseSigning()
+}
+
 
 apksign {
     storeFileProperty = "KEYSTORE_FILE"
@@ -149,6 +188,8 @@ android {
         applicationId = managerPackageName
 
         buildConfigField("boolean", "IS_PR_BUILD", isPrBuild.toString())
+        buildConfigField("String", "MKSU_MANAGER_PACKAGE", "\"$managerPackageName\"")
+        buildConfigField("String", "MKSU_CERT_SHA256", "\"$mksuCertSha256\"")
         resValue("string", "app_name", managerName)
 
         externalNativeBuild {
@@ -160,7 +201,7 @@ android {
         }
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += listOf("arm64-v8a", "x86_64", "riscv64")
         }
     }
 
@@ -189,6 +230,7 @@ base {
 
 dependencies {
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.splashscreen)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material.icons.extended)
@@ -202,9 +244,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-
-    implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigationevent.compose)
 
     implementation(libs.com.github.topjohnwu.libsu.core)
@@ -214,6 +253,7 @@ dependencies {
     implementation(libs.dev.rikka.rikkax.parcelablelist)
 
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.commonmark)
     implementation(libs.commonmark.ext.gfm.tables)
@@ -229,7 +269,7 @@ dependencies {
 
     implementation(libs.miuix.ui)
     implementation(libs.miuix.icons)
-    implementation(libs.miuix.navigation3.ui)
+    implementation(libs.miuix.nav)
     implementation(libs.miuix.preference)
     implementation(libs.miuix.blur)
 
@@ -243,6 +283,8 @@ dependencies {
     implementation(libs.commons.compress)
     implementation(libs.xz)
     implementation(libs.protobuf.kotlin.lite)
+
+    testImplementation(libs.junit)
 }
 
 kotlin {

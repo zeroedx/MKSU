@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,39 +31,71 @@ class SettingsViewModel(
         refresh()
     }
 
+    private var refreshJob: Job? = null
+
     fun refresh() {
-        viewModelScope.launch {
-            val checkUpdate = repo.checkUpdate
+        // Entering the tab used to start a second refresh on top of the one started by init.
+        // Feature probes are shell round trips, so drop duplicates instead of queuing them.
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch(Dispatchers.IO) {
             val checkModuleUpdate = repo.checkModuleUpdate
             val themeMode = repo.themeMode
             val miuixMonet = repo.miuixMonet
             val keyColor = repo.keyColor
             val enablePredictiveBack = repo.enablePredictiveBack
+            val enableSwipeDismiss = repo.enableSwipeDismiss
+            val pagerInterceptionMode = repo.pagerInterceptionMode
+            val predictiveBackAnimation = repo.predictiveBackAnimation
+            val showMoreModuleInfo = repo.showMoreModuleInfo
+            val simpleMode = repo.simpleMode
             val enableBlur = repo.enableBlur
             val enableFloatingBottomBar = repo.enableFloatingBottomBar
             val enableFloatingBottomBarBlur = repo.enableFloatingBottomBarBlur
             val enableNavigationBadge = repo.enableNavigationBadge
             val pageScale = repo.pageScale
+            val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
             val enableWebDebugging = repo.enableWebDebugging
             val colorStyle = repo.colorStyle
             val colorSpec = repo.colorSpec
             val isLkmMode = repo.isLkmMode()
 
-            // Async loading for natives/features
-            val suCompatStatus = repo.getSuCompatStatus()
-            val suCompatPersistValue = repo.getSuCompatPersistValue()
+            // One root shell job for all feature probes; the values are also used by the toggles.
+            val features = repo.getFeatureSnapshots(FEATURE_KEYS)
+            fun status(key: String) = features[key]?.status.orEmpty()
+            fun persisted(key: String) = features[key]?.persistedValue
+            fun current(key: String) = features[key]?.currentValue
+
+            val suCompatStatus = status(KEY_SU_COMPAT)
             val isSuEnabled = repo.isSuEnabled()
+            val suCompatMode = when {
+                suCompatStatus == "forced" -> if (isSuEnabled) 0 else 2
+                persisted(KEY_SU_COMPAT) == 0L -> 2
+                !isSuEnabled -> 1
+                else -> 0
+            }
 
-            val suCompatMode = if (suCompatPersistValue == 0L) 2 else if (!isSuEnabled) 1 else 0
-
-            val kernelUmountStatus = repo.getKernelUmountStatus()
+            val kernelUmountStatus = status(KEY_KERNEL_UMOUNT)
             val isKernelUmountEnabled = repo.isKernelUmountEnabled()
-            val selinuxHideStatus = repo.getSelinuxHideStatus()
+            val selinuxHideStatus = status(KEY_SELINUX_HIDE)
             val isSelinuxHideEnabled = repo.isSelinuxHideEnabled()
-            val sulogStatus = repo.getSulogStatus()
-            val isSulogEnabled = repo.getSulogPersistValue() == 1L
-            val adbRootStatus = repo.getAdbRootStatus()
-            val isAdbRootEnabled = repo.getAdbRootPersistValue() == 1L
+            val sulogStatus = status(KEY_SULOG)
+            val isSulogEnabled = if (sulogStatus == "forced") {
+                current(KEY_SULOG) == 1L
+            } else {
+                persisted(KEY_SULOG) == 1L
+            }
+            val adbRootStatus = status(KEY_ADB_ROOT)
+            val isAdbRootEnabled = if (adbRootStatus == "forced") {
+                current(KEY_ADB_ROOT) == 1L
+            } else {
+                persisted(KEY_ADB_ROOT) == 1L
+            }
+            val shellSuAdbOnlyStatus = status(KEY_SHELL_SU_ADB_ONLY)
+            val isShellSuAdbOnlyEnabled = if (shellSuAdbOnlyStatus == "forced") {
+                current(KEY_SHELL_SU_ADB_ONLY) == 1L
+            } else {
+                persisted(KEY_SHELL_SU_ADB_ONLY) == 1L
+            }
             val isDefaultUmountModules = repo.isDefaultUmountModules()
             val uiMode = repo.uiMode
             val autoJailbreak = repo.autoJailbreak
@@ -72,17 +105,22 @@ class SettingsViewModel(
             _uiState.update {
                 it.copy(
                     uiMode = uiMode,
-                    checkUpdate = checkUpdate,
                     checkModuleUpdate = checkModuleUpdate,
                     themeMode = themeMode,
                     miuixMonet = miuixMonet,
                     keyColor = keyColor,
                     enablePredictiveBack = enablePredictiveBack,
+                    enableSwipeDismiss = enableSwipeDismiss,
+                    pagerInterceptionMode = pagerInterceptionMode,
+                    predictiveBackAnimation = predictiveBackAnimation,
+                    showMoreModuleInfo = showMoreModuleInfo,
+                    simpleMode = simpleMode,
                     enableBlur = enableBlur,
                     enableFloatingBottomBar = enableFloatingBottomBar,
                     enableFloatingBottomBarBlur = enableFloatingBottomBarBlur,
                     enableNavigationBadge = enableNavigationBadge,
                     pageScale = pageScale,
+                    moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     enableWebDebugging = enableWebDebugging,
                     colorStyle = colorStyle,
                     colorSpec = colorSpec,
@@ -91,6 +129,8 @@ class SettingsViewModel(
                     isSuEnabled = isSuEnabled,
                     adbRootStatus = adbRootStatus,
                     isAdbRootEnabled = isAdbRootEnabled,
+                    shellSuAdbOnlyStatus = shellSuAdbOnlyStatus,
+                    isShellSuAdbOnlyEnabled = isShellSuAdbOnlyEnabled,
                     kernelUmountStatus = kernelUmountStatus,
                     isKernelUmountEnabled = isKernelUmountEnabled,
                     selinuxHideStatus = selinuxHideStatus,
@@ -105,11 +145,6 @@ class SettingsViewModel(
                 )
             }
         }
-    }
-
-    fun setCheckUpdate(enabled: Boolean) {
-        repo.checkUpdate = enabled
-        _uiState.update { it.copy(checkUpdate = enabled) }
     }
 
     fun setUiMode(mode: String) {
@@ -196,6 +231,31 @@ class SettingsViewModel(
         _uiState.update { it.copy(enablePredictiveBack = enabled) }
     }
 
+    fun setEnableSwipeDismiss(enabled: Boolean) {
+        repo.enableSwipeDismiss = enabled
+        _uiState.update { it.copy(enableSwipeDismiss = enabled) }
+    }
+
+    fun setPagerInterceptionMode(mode: Int) {
+        repo.pagerInterceptionMode = mode
+        _uiState.update { it.copy(pagerInterceptionMode = mode.coerceIn(0, 2)) }
+    }
+
+    fun setPredictiveBackAnimation(animation: String) {
+        repo.predictiveBackAnimation = animation
+        _uiState.update { it.copy(predictiveBackAnimation = animation) }
+    }
+
+    fun setShowMoreModuleInfo(enabled: Boolean) {
+        repo.showMoreModuleInfo = enabled
+        _uiState.update { it.copy(showMoreModuleInfo = enabled) }
+    }
+
+    fun setSimpleMode(enabled: Boolean) {
+        repo.simpleMode = enabled
+        _uiState.update { it.copy(simpleMode = enabled) }
+    }
+
     fun setEnableBlur(enabled: Boolean) {
         repo.enableBlur = enabled
         _uiState.update { it.copy(enableBlur = enabled) }
@@ -219,6 +279,11 @@ class SettingsViewModel(
     fun setPageScale(scale: Float) {
         repo.pageScale = scale
         _uiState.update { it.copy(pageScale = scale) }
+    }
+
+    fun setModuleDescriptionMaxLines(lines: Int) {
+        repo.moduleDescriptionMaxLines = lines
+        _uiState.update { it.copy(moduleDescriptionMaxLines = lines) }
     }
 
     fun setEnableWebDebugging(enabled: Boolean) {
@@ -305,6 +370,15 @@ class SettingsViewModel(
         }
     }
 
+    fun setShellSuAdbOnlyEnabled(enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (repo.setShellSuAdbOnlyEnabled(enabled)) {
+                repo.execKsudFeatureSave()
+                _uiState.update { it.copy(isShellSuAdbOnlyEnabled = enabled) }
+            }
+        }
+    }
+
     fun setAdbRootEnabled(enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             if (repo.setAdbRootEnabled(enabled)) {
@@ -320,5 +394,23 @@ class SettingsViewModel(
                 _uiState.update { it.copy(isDefaultUmountModules = enabled) }
             }
         }
+    }
+
+    private companion object {
+        const val KEY_SU_COMPAT = "su_compat"
+        const val KEY_KERNEL_UMOUNT = "kernel_umount"
+        const val KEY_SELINUX_HIDE = "selinux_hide"
+        const val KEY_SULOG = "sulog"
+        const val KEY_ADB_ROOT = "adb_root"
+        const val KEY_SHELL_SU_ADB_ONLY = "shell_su_adb_only"
+
+        val FEATURE_KEYS = listOf(
+            KEY_SU_COMPAT,
+            KEY_KERNEL_UMOUNT,
+            KEY_SELINUX_HIDE,
+            KEY_SULOG,
+            KEY_ADB_ROOT,
+            KEY_SHELL_SU_ADB_ONLY,
+        )
     }
 }

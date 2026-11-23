@@ -105,7 +105,7 @@ internal fun InstallScreenMaterial(
                             enabled = uiState.canSelectPartition,
                             items = partitionItems,
                             selectedIndex = partitionIndex,
-                            title = if (isDownload) {
+                            title = if (isDownload || uiState.slotSuffix.isBlank()) {
                                 stringResource(R.string.install_select_partition)
                             } else {
                                 "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})"
@@ -113,6 +113,14 @@ internal fun InstallScreenMaterial(
                             onItemSelected = actions.onSelectPartition,
                             icon = Icons.Filled.Edit
                         )
+                    }
+                    uiState.targetProblem?.let { problem ->
+                        add {
+                            SegmentedListItem(
+                                headlineContent = { Text(stringResource(R.string.install_select_partition)) },
+                                supportingContent = { Text(problem) },
+                            )
+                        }
                     }
                     if (uiState.canForceBackup) add {
                         SegmentedCheckboxItem(
@@ -200,7 +208,7 @@ internal fun InstallScreenMaterial(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                enabled = uiState.installMethod != null,
+                enabled = uiState.canProceed,
                 onClick = actions.onNext
             ) { Text(stringResource(R.string.install_next)) }
         }

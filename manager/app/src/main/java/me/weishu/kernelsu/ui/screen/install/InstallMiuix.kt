@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
+import me.weishu.kernelsu.ui.component.miuix.WarningCard
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.util.BlurredBar
 import me.weishu.kernelsu.ui.util.LkmSelection
@@ -146,29 +147,39 @@ internal fun InstallScreenMiuix(
                         } else {
                             uiState.partitionSelectionIndex
                         }
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                        ) {
-                            OverlayDropdownPreference(
-                                items = partitionItems,
-                                selectedIndex = partitionIndex,
-                                title = if (isDownload) {
-                                    stringResource(R.string.install_select_partition)
-                                } else {
-                                    "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})"
-                                },
-                                onSelectedIndexChange = actions.onSelectPartition,
-                                startAction = {
-                                    Icon(
-                                        MiuixIcons.ConvertFile,
-                                        tint = colorScheme.onSurface,
-                                        modifier = Modifier.padding(end = 12.dp),
-                                        contentDescription = null
-                                    )
-                                }
-                            )
+                        Column {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp),
+                            ) {
+                                OverlayDropdownPreference(
+                                    items = partitionItems,
+                                    selectedIndex = partitionIndex,
+                                    title = if (isDownload || uiState.slotSuffix.isBlank()) {
+                                        stringResource(R.string.install_select_partition)
+                                    } else {
+                                        "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})"
+                                    },
+                                    onSelectedIndexChange = actions.onSelectPartition,
+                                    startAction = {
+                                        Icon(
+                                            MiuixIcons.ConvertFile,
+                                            tint = colorScheme.onSurface,
+                                            modifier = Modifier.padding(end = 12.dp),
+                                            contentDescription = null
+                                        )
+                                    }
+                                )
+                            }
+                            uiState.targetProblem?.let { problem ->
+                                WarningCard(
+                                    message = problem,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 12.dp),
+                                )
+                            }
                         }
                     }
                     AnimatedVisibility(
@@ -278,7 +289,7 @@ internal fun InstallScreenMiuix(
                             .fillMaxWidth()
                             .padding(top = 12.dp),
                         text = stringResource(id = R.string.install_next),
-                        enabled = uiState.installMethod != null,
+                        enabled = uiState.canProceed,
                         colors = ButtonDefaults.textButtonColorsPrimary(),
                         onClick = actions.onNext
                     )

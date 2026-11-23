@@ -3,13 +3,16 @@ name: Build Manager
 on:
   push:
     branches: [ "main", "dev", "ci" ]
+    # Only run when files that affect the build (manager, kernel, userspace, tooling) change.
     paths:
       - '.github/workflows/build-manager.yml'
       - '.github/workflows/build-lkm.yml'
       - '.github/workflows/ddk-lkm.yml'
       - '.github/workflows/ksud.yml'
       - '.github/workflows/ksud-extra.yml'
+      - '.github/workflows/ksuinit.yml'
       - '.github/scripts/setup-rust-build.sh'
+      - '.github/riscv64-cargo.toml'
       - 'repack_apk.py'
       - 'manager/**'
       - 'kernel/**'
@@ -24,7 +27,9 @@ on:
       - '.github/workflows/ddk-lkm.yml'
       - '.github/workflows/ksud.yml'
       - '.github/workflows/ksud-extra.yml'
+      - '.github/workflows/ksuinit.yml'
       - '.github/scripts/setup-rust-build.sh'
+      - '.github/riscv64-cargo.toml'
       - 'repack_apk.py'
       - 'manager/**'
       - 'kernel/**'
@@ -32,6 +37,12 @@ on:
       - 'Cargo.lock'
       - 'Cargo.toml'
   workflow_call:
+    inputs:
+      manager_arch:
+        description: 'Comma-separated manager ABIs to package (release uses arm64-v8a)'
+        required: false
+        default: 'arm64-v8a,x86_64'
+        type: string
 
 jobs:
   generate-key:
@@ -39,6 +50,7 @@ jobs:
     outputs:
       expected_size: ${{ steps.extract.outputs.expected_size }}
       expected_hash: ${{ steps.extract.outputs.expected_hash }}
+      cert_sha256: ${{ steps.extract.outputs.cert_sha256 }}
       keystore: ${{ steps.gen.outputs.keystore }}
       keystore_password: ${{ steps.gen.outputs.keystore_password }}
       key_password: ${{ steps.gen.outputs.key_password }}
@@ -58,33 +70,52 @@ jobs:
             -validity 1 \
             -storepass "$KEYSTORE_PASSWORD" \
             -keypass "$KEY_PASSWORD" \
-            -dname "CN=KernelSU PR Build" \
+            -dname "CN=MKSU PR Build" \
             -storetype JKS \
             -keystore pr-key.jks
 
           echo "keystore=$(base64 -w 0 pr-key.jks)" >> $GITHUB_OUTPUT
 
+      - name: Require release signing secrets
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          missing=""
+          for name in KEYSTORE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing release signing secrets:$missing"
+            exit 1
+          fi
+
       - name: Extract certificate hash and size
-        if: github.event_name == 'pull_request'
         id: extract
         env:
-          STORE_PASS: ${{ steps.gen.outputs.keystore_password }}
+          STORE_PASS: ${{ github.event_name == 'pull_request' && steps.gen.outputs.keystore_password || secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ github.event_name == 'pull_request' && 'pr-key' || secrets.KEY_ALIAS }}
+          KEYSTORE_B64: ${{ github.event_name == 'pull_request' && steps.gen.outputs.keystore || secrets.KEYSTORE }}
         run: |
-          # Export DER certificate
+          echo "$KEYSTORE_B64" | base64 -d > signing-key.jks
+
           keytool -exportcert \
-            -alias pr-key \
-            -keystore pr-key.jks \
+            -alias "$KEY_ALIAS" \
+            -keystore signing-key.jks \
             -storepass "$STORE_PASS" \
-            -file pr-cert.der
+            -file signing-cert.der
 
-          # Calculate size in hex
-          SIZE_DEC=$(stat -c%s pr-cert.der)
+          SIZE_DEC=$(stat -c%s signing-cert.der)
           SIZE_HEX=$(printf '0x%04x' "$SIZE_DEC")
+          HASH=$(sha256sum signing-cert.der | awk '{print $1}')
           echo "expected_size=$SIZE_HEX" >> $GITHUB_OUTPUT
-
-          # Calculate SHA256 hash
-          HASH=$(sha256sum pr-cert.der | awk '{print $1}')
           echo "expected_hash=$HASH" >> $GITHUB_OUTPUT
+          echo "cert_sha256=$HASH" >> $GITHUB_OUTPUT
 
           echo "Certificate size: $SIZE_HEX ($SIZE_DEC bytes)"
           echo "Certificate hash: $HASH"
@@ -93,8 +124,9 @@ jobs:
     needs: generate-key
     uses: ./.github/workflows/build-lkm.yml
     with:
-      expected_size2: ${{ needs.generate-key.outputs.expected_size || '' }}
-      expected_hash2: ${{ needs.generate-key.outputs.expected_hash || '' }}
+      expected_size: ${{ needs.generate-key.outputs.expected_size }}
+      expected_hash: ${{ needs.generate-key.outputs.expected_hash }}
+      manager_package: ${{ github.event_name == 'pull_request' && 'com.zeroedx.mksu.pr' || 'com.zeroedx.mksu' }}
     secrets: inherit
 
   build-ksuinit:
@@ -107,6 +139,7 @@ jobs:
         include:
           - target: aarch64-linux-android
           - target: x86_64-linux-android
+          - target: riscv64-linux-android
     uses: ./.github/workflows/ksud.yml
     with:
       target: ${{ matrix.target }}
@@ -149,18 +182,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Write key
-        if: ${{ ( github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' )) || github.ref_type == 'tag' }}
+      - name: Write release key
+        if: github.event_name != 'pull_request'
+        env:
+          PROD_KEYSTORE: ${{ secrets.KEYSTORE }}
+          PROD_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          PROD_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          PROD_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
-            {
-              echo KEYSTORE_PASSWORD='${{ secrets.KEYSTORE_PASSWORD }}'
-              echo KEY_ALIAS='${{ secrets.KEY_ALIAS }}'
-              echo KEY_PASSWORD='${{ secrets.KEY_PASSWORD }}'
-              echo KEYSTORE_FILE='key.jks'
-            } >> gradle.properties
-            echo "${{ secrets.KEYSTORE }}" | base64 -d > key.jks
+          if [ -z "$PROD_KEYSTORE" ] || [ -z "$PROD_KEYSTORE_PASSWORD" ] || [ -z "$PROD_KEY_ALIAS" ] || [ -z "$PROD_KEY_PASSWORD" ]; then
+            echo "::error::Release signing secrets are missing; refusing to fall back to debug or upstream signing."
+            exit 1
           fi
+          echo "$PROD_KEYSTORE" | base64 -d > key.jks
+          {
+            echo KEYSTORE_PASSWORD="$PROD_KEYSTORE_PASSWORD"
+            echo KEY_ALIAS="$PROD_KEY_ALIAS"
+            echo KEY_PASSWORD="$PROD_KEY_PASSWORD"
+            echo KEYSTORE_FILE="$GITHUB_WORKSPACE/manager/key.jks"
+          } >> gradle.properties
 
       - name: Write PR key
         if: github.event_name == 'pull_request'
@@ -174,11 +214,11 @@ jobs:
             echo KEYSTORE_PASSWORD="$PR_KEYSTORE_PASSWORD"
             echo KEY_ALIAS='pr-key'
             echo KEY_PASSWORD="$PR_KEY_PASSWORD"
-            echo KEYSTORE_FILE='pr-key.jks'
+            echo KEYSTORE_FILE="$GITHUB_WORKSPACE/manager/pr-key.jks"
           } >> gradle.properties
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
@@ -186,15 +226,22 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-
       - name: Build with Gradle
+        env:
+          MKSU_CERT_SHA256: ${{ needs.generate-key.outputs.cert_sha256 }}
+          MANAGER_PACKAGE: ${{ github.event_name == 'pull_request' && 'com.zeroedx.mksu.pr' || 'com.zeroedx.mksu' }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./gradlew clean assembleRelease -PIS_PR_BUILD=true
+            ./gradlew clean assembleRelease \
+              -PIS_PR_BUILD=true \
+              -PKSU_PACKAGE_NAME="$MANAGER_PACKAGE" \
+              -PKSU_NAME="MKSU PR" \
+              -PMKSU_CERT_SHA256="$MKSU_CERT_SHA256"
           else
-            ./gradlew clean assembleRelease
+            ./gradlew clean assembleRelease \
+              -PKSU_PACKAGE_NAME="$MANAGER_PACKAGE" \
+              -PKSU_NAME="MKSU" \
+              -PMKSU_CERT_SHA256="$MKSU_CERT_SHA256"
           fi
 
       - name: Upload build artifact
@@ -215,6 +262,8 @@ jobs:
     needs: [build-manager, build-ksud, generate-key]
     if: always() && needs.build-manager.result == 'success' && needs.build-ksud.result == 'success' && needs.generate-key.result == 'success'
     runs-on: ubuntu-latest
+    env:
+      MANAGER_ARCH: ${{ inputs.manager_arch || 'arm64-v8a,x86_64' }}
 
     steps:
       - name: Checkout
@@ -230,9 +279,6 @@ jobs:
           else
             echo "UPLOAD=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
 
       - name: Download gradle manager artifact
         uses: actions/download-artifact@v8
@@ -252,6 +298,12 @@ jobs:
           name: ksud-x86_64-linux-android
           path: artifacts/ksud-x86_64-linux-android
 
+      - name: Download RISC-V ksud
+        uses: actions/download-artifact@v8
+        with:
+          name: ksud-riscv64-linux-android
+          path: artifacts/ksud-riscv64-linux-android
+
       - name: Place manager apk and ksud artifacts
         run: |
           mkdir -p manager/app/build/outputs/apk/release
@@ -261,12 +313,16 @@ jobs:
 
           mkdir -p target/aarch64-linux-android/release
           mkdir -p target/x86_64-linux-android/release
+          mkdir -p target/riscv64-linux-android/release
           ARM64_KSUD=$(find artifacts/ksud-aarch64-linux-android -type f -name ksud | head -n 1)
           X86_64_KSUD=$(find artifacts/ksud-x86_64-linux-android -type f -name ksud | head -n 1)
+          RISCV64_KSUD=$(find artifacts/ksud-riscv64-linux-android -type f -name ksud | head -n 1)
           test -n "$ARM64_KSUD"
           test -n "$X86_64_KSUD"
+          test -n "$RISCV64_KSUD"
           cp -f "$ARM64_KSUD" target/aarch64-linux-android/release/ksud
           cp -f "$X86_64_KSUD" target/x86_64-linux-android/release/ksud
+          cp -f "$RISCV64_KSUD" target/riscv64-linux-android/release/ksud
 
       - name: Prepare signing inputs
         if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
@@ -297,11 +353,15 @@ jobs:
       - name: Repack and resign
         if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
         run: |
+          ARCH_ARGS=""
+          IFS=',' read -ra ARCHS <<< "$MANAGER_ARCH"
+          for arch in "${ARCHS[@]}"; do
+            ARCH_ARGS="$ARCH_ARGS -a $arch"
+          done
           python3 repack_apk.py repack \
             -b release \
             -t release \
-            -a arm64-v8a \
-            -a x86_64 \
+            $ARCH_ARGS \
             -K "$SIGN_KEYSTORE_FILE" \
             -A "$SIGN_KEY_ALIAS" \
             -P "$SIGN_KEYSTORE_PASSWORD" \
@@ -315,22 +375,13 @@ jobs:
           name: manager
           path: dist/*.apk
 
-      - name: Bot session cache
-        if: github.event_name != 'pull_request' && steps.need_upload.outputs.UPLOAD == 'true'
-        id: bot_session_cache
-        uses: actions/cache@v6
-        with:
-          path: scripts/ksubot.session
-          key: ${{ runner.os }}-bot-session
-
       - name: Upload to telegram
         if: github.event_name != 'pull_request' && steps.need_upload.outputs.UPLOAD == 'true'
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          COMMIT_URL: ${{ github.event.head_commit.url }}
+          GITHUB_EVENT: ${{ toJson(github.event) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TITLE: Manager
           BRANCH: ${{ github.ref_name }}

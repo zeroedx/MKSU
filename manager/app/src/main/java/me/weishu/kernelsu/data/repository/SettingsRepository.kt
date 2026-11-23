@@ -1,8 +1,10 @@
 package me.weishu.kernelsu.data.repository
 
+import kotlinx.coroutines.flow.Flow
+import me.weishu.kernelsu.ui.util.FeatureSnapshot
+
 interface SettingsRepository {
     var uiMode: String
-    var checkUpdate: Boolean
     var checkModuleUpdate: Boolean
     var themeMode: Int
     var miuixMonet: Boolean
@@ -10,15 +12,24 @@ interface SettingsRepository {
     var colorStyle: String
     var colorSpec: String
     var enablePredictiveBack: Boolean
+    var enableSwipeDismiss: Boolean
+    var pagerInterceptionMode: Int
     var enableBlur: Boolean
     var enableFloatingBottomBar: Boolean
     var enableFloatingBottomBarBlur: Boolean
     var enableNavigationBadge: Boolean
+    var navigationRailExpanded: Boolean
     var pageScale: Float
+    var moduleDescriptionMaxLines: Int
     var enableWebDebugging: Boolean
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean
-    var moduleRepoSortOrder: Int
+    var showMoreModuleInfo: Boolean
+    var simpleMode: Boolean
+    var predictiveBackAnimation: String
+
+    /** Name of the [me.weishu.kernelsu.ui.screen.modulerepo.RepoSort] entry. */
+    var moduleRepoSortOrder: String
     var superuserShowSystemApps: Boolean
     var superuserShowOnlyPrimaryUserApps: Boolean
     var superuserSortOption: Int
@@ -26,6 +37,14 @@ interface SettingsRepository {
     var autoJailbreak: Boolean
     var useSoftReboot: Boolean
     val intentToken: String
+
+    /** Emits the current value and every later change, so screens react without a refresh. */
+    val simpleModeFlow: Flow<Boolean>
+
+    /** Same contract as [simpleModeFlow], for the installed-module card details. */
+    val showMoreModuleInfoFlow: Flow<Boolean>
+
+    suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot>
 
     suspend fun getSuCompatStatus(): String
     suspend fun getSuCompatPersistValue(): Long?
@@ -44,11 +63,17 @@ interface SettingsRepository {
 
     suspend fun getSulogStatus(): String
     suspend fun getSulogPersistValue(): Long?
+    suspend fun getSulogValue(): Long?
     fun setSulogEnabled(enabled: Boolean): Boolean
 
     suspend fun getAdbRootStatus(): String
     suspend fun getAdbRootPersistValue(): Long?
+    suspend fun getAdbRootValue(): Long?
     fun setAdbRootEnabled(enabled: Boolean): Boolean
+    suspend fun getShellSuAdbOnlyStatus(): String
+    suspend fun getShellSuAdbOnlyPersistValue(): Long?
+    suspend fun getShellSuAdbOnlyValue(): Long?
+    fun setShellSuAdbOnlyEnabled(enabled: Boolean): Boolean
 
     fun isDefaultUmountModules(): Boolean
     fun setDefaultUmountModules(enabled: Boolean): Boolean

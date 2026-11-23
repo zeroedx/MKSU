@@ -6,7 +6,7 @@
     <string name="home_working">Çalışıyor</string>
     <string name="home_working_version">Sürüm: %s</string>
     <string name="home_unsupported">Desteklenmiyor</string>
-    <string name="home_unsupported_reason">KernelSU şimdilik sadece GKI çekirdeklerini destekliyor</string>
+    <string name="home_unsupported_reason">MKSU şimdilik sadece GKI çekirdeklerini destekliyor</string>
     <string name="home_kernel">Çekirdek Versiyonu</string>
     <string name="home_manager_version">Yönetici sürümü</string>
     <string name="home_fingerprint">Parmak izi</string>
@@ -41,12 +41,12 @@
     <string name="safe_mode">Güvenli mod</string>
     <string name="reboot_to_apply">Değişikliklerin uygulanması için cihazı yeniden başlat</string>
     <string name="module_magisk_conflict">Magisk ile çakışma nedeniyle modüller kullanılamıyor!</string>
-    <string name="home_learn_kernelsu">KernelSU\'yu öğrenin</string>
-    <string name="home_learn_kernelsu_url">https://kernelsu.org/guide/what-is-kernelsu.html</string>
-    <string name="home_click_to_learn_kernelsu">KernelSU\'nun nasıl kurulacağını ve modüllerin nasıl kullanılacağını öğrenin.</string>
+    <string name="home_learn_kernelsu">MKSU\'yu öğrenin</string>
+    <string name="home_learn_kernelsu_url">https://github.com/zeroedx/MKSU</string>
+    <string name="home_click_to_learn_kernelsu">MKSU\'nun nasıl kurulacağını ve modüllerin nasıl kullanılacağını öğrenin.</string>
     <string name="home_support_title">Bizi Destekleyin</string>
-    <string name="home_support_content">KernelSU ücretsiz ve açık kaynaklı bir yazılımdır ve her zaman öyle kalacaktır. Ancak bağış yaparak bize destek olduğunuzu gösterebilirsiniz.</string>
-    <string name="about_source_code"><![CDATA[%1$s adresinde kaynak kodunu görüntüleyin.<br/>%2$s kanalımıza katılın.]]></string>
+    <string name="home_support_content">MKSU ücretsiz ve açık kaynaklı bir yazılımdır ve her zaman öyle kalacaktır. Ancak bağış yaparak bize destek olduğunuzu gösterebilirsiniz.</string>
+    <string name="about_source_code"><![CDATA[%1$s adresinde kaynak kodunu görüntüleyin.]]></string>
     <string name="profile" translatable="false">Uygulama profili</string>
     <string name="profile_default">Varsayılan</string>
     <string name="profile_template">Şablon</string>
@@ -61,16 +61,19 @@
     <string name="profile_selinux_context">SELinux içeriği</string>
     <string name="profile_umount_modules">Modüllerin bağlantısını kes</string>
     <string name="failed_to_update_app_profile">%s için uygulama profili güncellenemedi</string>
-    <string name="require_kernel_version">Mevcut KernelSU sürümü %1$d, yöneticinin düzgün çalışabilmesi için çok düşük. Lütfen %2$d sürümüne veya daha yüksek bir sürüme güncelleyin!</string>
+    <string name="home_lkm_update_available">Yerleşik LKM\'nin daha yeni bir sürümü mevcut. Güncellemek için dokunun.</string>
+    <string name="home_lkm_custom">Özel</string>
+    <string name="require_manager_version">Yönetici güncellemesi gerekli.</string>
+    <string name="require_kernel_version">Çekirdek güncellemesi gerekli. Yüklemek için dokunun.</string>
+    <string name="require_kernel_version_gki">Çekirdek güncellemesi gerekli.</string>
     <string name="settings_umount_modules_default">Varsayılan olarak modüllerin bağlantısını kes</string>
     <string name="settings_umount_modules_default_summary">Uygulama profilindeki \"Modüllerin bağlantısını kes\" seçeneği için varsayılan değer. Etkinleştirilirse, profil ayarı yapılmamış uygulamalar için modüllerin sistemde yaptığı tüm değişiklikler kaldırılacaktır.</string>
-    <string name="profile_umount_modules_summary">Bu seçeneği etkinleştirmek, KernelSU\'nun bu uygulama için modüller tarafından değiştirilen dosyaları geri yüklemesine izin verir.</string>
+    <string name="profile_umount_modules_summary">Bu seçeneği etkinleştirmek, MKSU\'nun bu uygulama için modüller tarafından değiştirilen dosyaları geri yüklemesine izin verir.</string>
     <string name="profile_selinux_domain">İsim alanı</string>
     <string name="profile_selinux_rules">Kurallar</string>
     <string name="module_update">Güncelle</string>
     <string name="module_downloading">Modül indiriliyor: %s</string>
     <string name="module_start_downloading">İndirme başladı: %s</string>
-    <string name="new_version_available">Yeni sürüm: %s kullanılabilir, güncellemek için tıklayın!</string>
     <string name="launch_app">Uygulamayı başlat</string>
     <string name="force_stop_app">Uygulamayı durmaya zorla</string>
     <string name="restart_app">Uygulamayı yeniden başlat</string>
@@ -95,8 +98,6 @@
     <string name="app_profile_template_import_success">Başarıyla içe aktarıldı</string>
     <string name="app_profile_template_save_failed">Şablon kaydedilemedi</string>
     <string name="app_profile_template_import_empty">Pano boş!</string>
-    <string name="settings_check_update">Güncellemeleri kontrol et</string>
-    <string name="settings_check_update_summary">Uygulamayı açarken güncellemeleri otomatik denetle.</string>
     <string name="grant_root_failed">Root izni verilemedi!</string>
     <string name="open">Aç</string>
     <string name="enable_web_debugging">WebView hata ayıklaması</string>
@@ -118,10 +119,10 @@
     <string name="settings_uninstall_temporary">Geçici olarak kaldır</string>
     <string name="settings_uninstall_permanent">Kalıcı olarak kaldır</string>
     <string name="settings_restore_stock_image">Stok imajı geri yükle</string>
-    <string name="settings_uninstall_temporary_message">KernelSU\'yu geçici olarak kaldır, bir sonraki yeniden başlatmadan sonra orijinal durumuna geri yükle.</string>
+    <string name="settings_uninstall_temporary_message">MKSU\'yu geçici olarak kaldır, bir sonraki yeniden başlatmadan sonra orijinal durumuna geri yükle.</string>
     <string name="settings_uninstall">Kaldır</string>
-    <string name="settings_uninstall_permanent_message">KernelSU\'yu (root ve tüm modülleri) tamamen ve kalıcı olarak kaldırır</string>
-    <string name="settings_restore_stock_image_message">Stok fabrika imajını geri yükler (eğer yedek varsa), bu işlem genellikle OTA güncellemesinden önce yapılır; KernelSU\'yu kaldırmanız gerekiyorsa lütfen \"Kalıcı olarak kaldır\" seçeneğini kullanın.</string>
+    <string name="settings_uninstall_permanent_message">MKSU\'yu (root ve tüm modülleri) tamamen ve kalıcı olarak kaldırır</string>
+    <string name="settings_restore_stock_image_message">Stok fabrika imajını geri yükler (eğer yedek varsa), bu işlem genellikle OTA güncellemesinden önce yapılır; MKSU\'yu kaldırmanız gerekiyorsa lütfen \"Kalıcı olarak kaldır\" seçeneğini kullanın.</string>
     <string name="flash_success">Flaşlama başarılı</string>
     <string name="selected_lkm">Seçili LKM: %s</string>
     <string name="flashing">Flaşlanıyor</string>
@@ -142,8 +143,7 @@
     <string name="settings_sucompat">Klasik SU komutu</string>
     <string name="settings_sucompat_summary">Uygulama Profilinde Süper Kullanıcı izni verilen uygulamaların /system/bin/su yürütülerek süper kullanıcı kabuğu almasına izin verir; yalnızca yeni işlemler için etkilidir.</string>
     <string name="settings_kernel_umount">Kernel bağlantısını kes</string>
-    <string name="settings_kernel_umount_summary">KernelSU tarafından kontrol edilen çekirdek seviyesinde bağlantı kesme davranışı.</string>
-    <string name="home_version_mismatch">Yönetici sürümü (%1$d) ile KernelSU sürücüsü sürümü (%2$d) uyuşmuyor.</string>
+    <string name="settings_kernel_umount_summary">MKSU tarafından kontrol edilen çekirdek seviyesinde bağlantı kesme davranışı.</string>
     <string name="reboot_soft">Soft restart</string>
     <string name="jailbreak_mode">Jailbreak modu</string>
     <string name="home_jailbreak">Jailbreak</string>
@@ -151,8 +151,6 @@
     <string name="safe_mode_module_disabled">Güvenli modda modül yükleme devre dışı bırakılmıştır</string>
     <string name="module_action_success">Modül işlemi başarıyla gerçekleştirildi.</string>
     <string name="app_profile_affects_following_apps">Aşağıdaki uygulamaları etkiler</string>
-    <string name="settings_enable_predictive_back">Tahmin edilebilir geri hareket</string>
-    <string name="settings_enable_predictive_back_summary">Tahminli geri hareket desteğini etkinleştir.</string>
     <string name="settings_module_check_update">Modül güncellemelerini kontrol et</string>
     <string name="home_pr_build_warning">Bu bir PR hata ayıklama sürümüdür. Üretim ortamında KESİNLİKLE KULLANMAYIN!</string>
     <string name="home_pr_kernel_warning">Çekirdek, PR imzası desteği ile derlenmiştir. Bu, üretim amaçlı bir çekirdek değildir!</string>
@@ -248,7 +246,8 @@
     <string name="download">İndir</string>
     <string name="download_cancel">İptal</string>
     <string name="download_install">Yükle</string>
-    <string name="profile_flags_desc_no_new_privs">Bu root profili bağlamında KernelSU aracılığıyla daha fazla ayrıcalık yükseltmesini engeller.</string>
+    <string name="profile_flags_desc_no_new_privs">Bu root profili bağlamında MKSU aracılığıyla daha fazla ayrıcalık yükseltmesini engeller.</string>
     <string name="install_force_backup">Stok imaj olarak yedekle</string>
     <string name="install_force_backup_summary">Lütfen seçtiğiniz boot imajının stok imaj olduğundan emin olun</string>
+    <string name="home_version_mismatch">Yönetici sürümü (%1$d) ile MKSU sürücüsü sürümü (%2$d) uyuşmuyor.</string>
 </resources>

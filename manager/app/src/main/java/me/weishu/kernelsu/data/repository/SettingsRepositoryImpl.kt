@@ -2,20 +2,29 @@ package me.weishu.kernelsu.data.repository
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.edit
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.topjohnwu.superuser.ShellUtils
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
 import me.weishu.kernelsu.Natives
 import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.magica.BootCompletedReceiver
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.screen.modulerepo.RepoSort
+import me.weishu.kernelsu.ui.util.FeatureSnapshot
 import me.weishu.kernelsu.ui.util.execKsud
 import me.weishu.kernelsu.ui.util.getFeaturePersistValue
+import me.weishu.kernelsu.ui.util.getFeatureSnapshots as readFeatureSnapshots
 import me.weishu.kernelsu.ui.util.getFeatureStatus
+import me.weishu.kernelsu.ui.util.getFeatureValue
 import java.security.SecureRandom
 
 private const val SETTINGS_PREFS = "settings"
@@ -30,6 +39,8 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     private companion object {
         private const val INTENT_TOKEN_KEY = "intent_token"
+        private const val SIMPLE_MODE_KEY = "simple_mode"
+        private const val SHOW_MORE_MODULE_INFO_KEY = "show_more_module_info"
         private val secureRandom = SecureRandom()
     }
 
@@ -40,10 +51,6 @@ class SettingsRepositoryImpl : SettingsRepository {
     override var uiMode: String
         get() = prefs.getString("ui_mode", UiMode.DEFAULT_VALUE) ?: UiMode.DEFAULT_VALUE
         set(value) = prefs.edit { putString("ui_mode", value) }
-
-    override var checkUpdate: Boolean
-        get() = prefs.getBoolean("check_update", true)
-        set(value) = prefs.edit { putBoolean("check_update", value) }
 
     override var checkModuleUpdate: Boolean
         get() = prefs.getBoolean("module_check_update", true)
@@ -73,6 +80,14 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getBoolean("enable_predictive_back", false)
         set(value) = prefs.edit { putBoolean("enable_predictive_back", value) }
 
+    override var enableSwipeDismiss: Boolean
+        get() = prefs.getBoolean("enable_swipe_dismiss", true)
+        set(value) = prefs.edit { putBoolean("enable_swipe_dismiss", value) }
+
+    override var pagerInterceptionMode: Int
+        get() = prefs.getInt("pager_interception_mode", 1)
+        set(value) = prefs.edit { putInt("pager_interception_mode", value.coerceIn(0, 2)) }
+
     override var enableBlur: Boolean
         get() = prefs.getBoolean("enable_blur", false)
         set(value) = prefs.edit { putBoolean("enable_blur", value) }
@@ -89,9 +104,17 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getBoolean("enable_navigation_badge", true)
         set(value) = prefs.edit { putBoolean("enable_navigation_badge", value) }
 
+    override var navigationRailExpanded: Boolean
+        get() = prefs.getBoolean("nav_rail_expanded", false)
+        set(value) = prefs.edit { putBoolean("nav_rail_expanded", value) }
+
     override var pageScale: Float
         get() = prefs.getFloat("page_scale", 1.0f)
         set(value) = prefs.edit { putFloat("page_scale", value) }
+
+    override var moduleDescriptionMaxLines: Int
+        get() = prefs.getInt("module_description_max_lines", 4)
+        set(value) = prefs.edit { putInt("module_description_max_lines", value) }
 
     override var enableWebDebugging: Boolean
         get() = prefs.getBoolean("enable_web_debugging", false)
@@ -105,9 +128,47 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getBoolean("module_sort_action_first", false)
         set(value) = prefs.edit { putBoolean("module_sort_action_first", value) }
 
-    override var moduleRepoSortOrder: Int
-        get() = prefs.getInt("module_repo_sort_order", RepoSort.UPDATED.ordinal)
-        set(value) = prefs.edit { putInt("module_repo_sort_order", value) }
+    override var showMoreModuleInfo: Boolean
+        get() = prefs.getBoolean(SHOW_MORE_MODULE_INFO_KEY, false)
+        set(value) = prefs.edit { putBoolean(SHOW_MORE_MODULE_INFO_KEY, value) }
+
+    override val showMoreModuleInfoFlow: Flow<Boolean> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == SHOW_MORE_MODULE_INFO_KEY) trySend(prefs.getBoolean(SHOW_MORE_MODULE_INFO_KEY, false))
+        }
+        // The listener must stay strongly reachable: SharedPreferences only holds it weakly.
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(prefs.getBoolean(SHOW_MORE_MODULE_INFO_KEY, false))
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    override var simpleMode: Boolean
+        get() = prefs.getBoolean(SIMPLE_MODE_KEY, false)
+        set(value) = prefs.edit { putBoolean(SIMPLE_MODE_KEY, value) }
+
+    override val simpleModeFlow: Flow<Boolean> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == SIMPLE_MODE_KEY) trySend(prefs.getBoolean(SIMPLE_MODE_KEY, false))
+        }
+        // The listener must stay strongly reachable: SharedPreferences only holds it weakly.
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(prefs.getBoolean(SIMPLE_MODE_KEY, false))
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    override var predictiveBackAnimation: String
+        get() = prefs.getString("predictive_back_animation", "default") ?: "default"
+        set(value) = prefs.edit { putString("predictive_back_animation", value) }
+
+    override var moduleRepoSortOrder: String
+        get() = RepoSort.fromStored(
+            name = prefs.getString("module_repo_sort", null),
+            legacyOrdinal = if (prefs.contains("module_repo_sort_order")) prefs.getInt("module_repo_sort_order", 0) else null,
+        ).name
+        set(value) = prefs.edit {
+            putString("module_repo_sort", value)
+            remove("module_repo_sort_order")
+        }
 
     override var superuserShowSystemApps: Boolean
         get() = prefs.getBoolean("show_system_apps", false)
@@ -156,6 +217,9 @@ class SettingsRepositoryImpl : SettingsRepository {
         return token
     }
 
+    override suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot> =
+        readFeatureSnapshots(features)
+
     override suspend fun getSuCompatStatus(): String = getFeatureStatus("su_compat")
 
     override suspend fun getSuCompatPersistValue(): Long? = getFeaturePersistValue("su_compat")
@@ -184,11 +248,15 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     override suspend fun getSulogPersistValue(): Long? = getFeaturePersistValue("sulog")
 
+    override suspend fun getSulogValue(): Long? = getFeatureValue("sulog")
+
     override fun setSulogEnabled(enabled: Boolean): Boolean = execKsud("feature set sulog ${if (enabled) 1 else 0}", true)
 
     override suspend fun getAdbRootStatus(): String = getFeatureStatus("adb_root")
 
     override suspend fun getAdbRootPersistValue(): Long? = getFeaturePersistValue("adb_root")
+
+    override suspend fun getAdbRootValue(): Long? = getFeatureValue("adb_root")
 
     override fun setAdbRootEnabled(enabled: Boolean): Boolean =
         if (execKsud("feature set adb_root ${if (enabled) 1 else 0}", true)) {
@@ -197,6 +265,15 @@ class SettingsRepositoryImpl : SettingsRepository {
         } else {
             false
         }
+
+    override suspend fun getShellSuAdbOnlyStatus(): String = getFeatureStatus("shell_su_adb_only")
+
+    override suspend fun getShellSuAdbOnlyPersistValue(): Long? = getFeaturePersistValue("shell_su_adb_only")
+
+    override suspend fun getShellSuAdbOnlyValue(): Long? = getFeatureValue("shell_su_adb_only")
+
+    override fun setShellSuAdbOnlyEnabled(enabled: Boolean): Boolean =
+        execKsud("feature set shell_su_adb_only ${if (enabled) 1 else 0}", true)
 
     override fun isDefaultUmountModules(): Boolean = Natives.isDefaultUmountModules()
 
