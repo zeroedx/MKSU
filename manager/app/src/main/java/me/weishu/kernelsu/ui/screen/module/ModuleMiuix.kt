@@ -224,6 +224,9 @@ fun ModulePagerMiuix(
 
     val scope = rememberCoroutineScope()
     val snackbarJob = remember { mutableStateOf<Job?>(null) }
+    val snackbarHeight = remember { mutableIntStateOf(0) }
+    // The job is cleared when the snackbar finishes, so a non-null job means one is on screen.
+    val fabClearance = rememberSnackbarClearance(snackbarJob.value != null, snackbarHeight.intValue)
     ObserveAsEvents(moduleEvent) { event ->
         when (event) {
             is ModuleEffect.Toast -> {
@@ -237,13 +240,18 @@ fun ModulePagerMiuix(
                 // Soft reboot keeps the jailbreak and still applies module changes
                 val softReboot = isSoftRebootPreferred()
                 snackbarJob.value = scope.launch {
-                    val result = snackbarHostState.showSnackbar(
-                        message = event.message,
-                        actionLabel = context.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
-                        duration = SnackbarDuration.Long,
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        reboot(if (softReboot) "soft_reboot" else "")
+                    try {
+                        val result = snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = context.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            reboot(if (softReboot) "soft_reboot" else "")
+                        }
+                    } finally {
+                        // Only the newest snackbar owns the install button clearance
+                        if (snackbarJob.value === coroutineContext[Job]) snackbarJob.value = null
                     }
                 }
             }
@@ -401,7 +409,7 @@ fun ModulePagerMiuix(
                 }
                 FloatingActionButton(
                     modifier = Modifier
-                        .padding(bottom = bottomInnerPadding + 20.dp, end = 20.dp)
+                        .padding(bottom = bottomInnerPadding + 20.dp + fabClearance, end = 20.dp)
                         .border(0.05.dp, colorScheme.outline.copy(alpha = 0.5f), CircleShape),
                     shadowElevation = 0.dp,
                     onClick = {
@@ -449,110 +457,108 @@ fun ModulePagerMiuix(
                 )
             }
         },
-        snackbarHost = {
-            SnackbarHost(
-                state = snackbarHostState,
-                modifier = if (uiState.installButtonVisible) {
-                    Modifier
-                } else {
-                    // No FAB slot to stack above: keep the snackbar clear of the main bottom bar.
-                    Modifier.padding(bottom = bottomInnerPadding + 20.dp)
-                },
-            )
-        },
         contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal)
     ) { innerPadding ->
-        if (uiState.magiskInstalled) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    stringResource(R.string.module_magisk_conflict),
-                    textAlign = TextAlign.Center,
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (uiState.magiskInstalled) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        stringResource(R.string.module_magisk_conflict),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                return@Box
             }
-            return@Scaffold
-        }
-        val layoutDirection = LocalLayoutDirection.current
-        searchStatus.SearchBox {
-            val pullToRefreshState = rememberPullToRefreshState()
-            val refreshTexts = listOf(
-                stringResource(R.string.refresh_pulling),
-                stringResource(R.string.refresh_release),
-                stringResource(R.string.refresh_refresh),
-                stringResource(R.string.refresh_complete),
-            )
-            val contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding() + 6.dp,
-                start = innerPadding.calculateStartPadding(layoutDirection),
-                end = innerPadding.calculateEndPadding(layoutDirection),
-                bottom = bottomInnerPadding + FloatingActionButtonDefaults.MinHeight + 20.dp + 12.dp,
-            )
-            PullToRefresh(
-                isRefreshing = uiState.isRefreshing,
-                pullToRefreshState = pullToRefreshState,
-                onRefresh = {
-                    actions.onRefresh()
-                    refreshTick.intValue++
-                },
-                refreshTexts = refreshTexts,
-                contentPadding = contentPadding,
-            ) {
-                if (modules.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = innerPadding.calculateTopPadding(),
-                                start = innerPadding.calculateStartPadding(layoutDirection),
-                                end = innerPadding.calculateEndPadding(layoutDirection),
-                                bottom = bottomInnerPadding
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // The refresh indicator doubles as the first-load hint;
-                        // only announce emptiness once loading has finished.
-                        if (uiState.hasLoaded) {
-                            Text(
-                                stringResource(R.string.module_empty),
-                                textAlign = TextAlign.Center,
-                                color = Color.Gray,
+            val layoutDirection = LocalLayoutDirection.current
+            searchStatus.SearchBox {
+                val pullToRefreshState = rememberPullToRefreshState()
+                val refreshTexts = listOf(
+                    stringResource(R.string.refresh_pulling),
+                    stringResource(R.string.refresh_release),
+                    stringResource(R.string.refresh_refresh),
+                    stringResource(R.string.refresh_complete),
+                )
+                val contentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding() + 6.dp,
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    end = innerPadding.calculateEndPadding(layoutDirection),
+                    bottom = bottomInnerPadding + FloatingActionButtonDefaults.MinHeight + 20.dp + 12.dp,
+                )
+                PullToRefresh(
+                    isRefreshing = uiState.isRefreshing,
+                    pullToRefreshState = pullToRefreshState,
+                    onRefresh = {
+                        actions.onRefresh()
+                        refreshTick.intValue++
+                    },
+                    refreshTexts = refreshTexts,
+                    contentPadding = contentPadding,
+                ) {
+                    if (modules.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    top = innerPadding.calculateTopPadding(),
+                                    start = innerPadding.calculateStartPadding(layoutDirection),
+                                    end = innerPadding.calculateEndPadding(layoutDirection),
+                                    bottom = bottomInnerPadding
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // The refresh indicator doubles as the first-load hint;
+                            // only announce emptiness once loading has finished.
+                            if (uiState.hasLoaded) {
+                                Text(
+                                    stringResource(R.string.module_empty),
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Gray,
+                                )
+                            }
+                        }
+                    } else {
+                        val latestModules = rememberUpdatedState(modules)
+                        val latestRefreshing = rememberUpdatedState(uiState.isRefreshing)
+                        ScrollToTopOnChange(
+                            listState,
+                            uiState.sortEnabledFirst,
+                            uiState.sortActionFirst,
+                            refreshTick.intValue,
+                            isBusy = { latestRefreshing.value },
+                        ) { latestModules.value }
+                        Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
+                            ModuleList(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .scrollEndHaptic()
+                                    .overScrollVertical()
+                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                                modules = modules,
+                                updateInfoMap = uiState.updateInfo,
+                                showMoreModuleInfo = uiState.showMoreModuleInfo,
+                                moduleIcons = uiState.moduleIcons,
+                                actions = actions,
+                                onModuleAddShortcut = { module, type ->
+                                    onModuleAddShortcut(module, type)
+                                },
+                                contentPadding = contentPadding,
+                                listState = listState,
                             )
                         }
                     }
-                } else {
-                    val latestModules = rememberUpdatedState(modules)
-                    val latestRefreshing = rememberUpdatedState(uiState.isRefreshing)
-                    ScrollToTopOnChange(
-                        listState,
-                        uiState.sortEnabledFirst,
-                        uiState.sortActionFirst,
-                        refreshTick.intValue,
-                        isBusy = { latestRefreshing.value },
-                    ) { latestModules.value }
-                    Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
-                        ModuleList(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .scrollEndHaptic()
-                                .overScrollVertical()
-                                .nestedScroll(scrollBehavior.nestedScrollConnection),
-                            modules = modules,
-                            updateInfoMap = uiState.updateInfo,
-                            showMoreModuleInfo = uiState.showMoreModuleInfo,
-                            moduleIcons = uiState.moduleIcons,
-                            actions = actions,
-                            onModuleAddShortcut = { module, type ->
-                                onModuleAddShortcut(module, type)
-                            },
-                            contentPadding = contentPadding,
-                            listState = listState,
-                        )
-                    }
                 }
+            }
+
+            ModuleSnackbar(
+                bottomBarPadding = bottomInnerPadding,
+                onHeightChanged = { snackbarHeight.intValue = it },
+            ) {
+                SnackbarHost(state = snackbarHostState)
             }
         }
     }

@@ -246,6 +246,9 @@ fun ModulePagerMaterial(
 
     val scope = rememberCoroutineScope()
     val snackbarJob = remember { mutableStateOf<Job?>(null) }
+    val snackbarHeight = remember { mutableIntStateOf(0) }
+    // The job is cleared when the snackbar finishes, so a non-null job means one is on screen.
+    val fabClearance = rememberSnackbarClearance(snackbarJob.value != null, snackbarHeight.intValue)
     ObserveAsEvents(moduleEvent) { event ->
         when (event) {
             is ModuleEffect.Toast -> {
@@ -259,13 +262,18 @@ fun ModulePagerMaterial(
                 // Soft reboot keeps the jailbreak and still applies module changes
                 val softReboot = isSoftRebootPreferred()
                 snackbarJob.value = scope.launch {
-                    val result = snackBarHost.showSnackbar(
-                        message = event.message,
-                        actionLabel = resource.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
-                        duration = SnackbarDuration.Long
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        reboot(if (softReboot) "soft_reboot" else "")
+                    try {
+                        val result = snackBarHost.showSnackbar(
+                            message = event.message,
+                            actionLabel = resource.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
+                            duration = SnackbarDuration.Long
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            reboot(if (softReboot) "soft_reboot" else "")
+                        }
+                    } finally {
+                        // Only the newest snackbar owns the install button clearance
+                        if (snackbarJob.value === coroutineContext[Job]) snackbarJob.value = null
                     }
                 }
             }
@@ -387,7 +395,7 @@ fun ModulePagerMaterial(
                 }
 
                 SmallExtendedFloatingActionButton(
-                    modifier = Modifier.padding(bottom = bottomInnerPadding),
+                    modifier = Modifier.padding(bottom = bottomInnerPadding + fabClearance),
                     expanded = fabExpanded,
                     onClick = {
                         // Select the zip files to install
@@ -403,68 +411,69 @@ fun ModulePagerMaterial(
             }
         },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-        snackbarHost = {
-            SnackBarHost(hostState = snackBarHost, modifier = Modifier.let {
-                if (!uiState.installButtonVisible) it.padding(
-                    bottom =
-                        bottomInnerPadding
-                ) else it
-            })
-        }
     ) { innerPadding ->
-        PullToRefreshBox(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            isRefreshing = uiState.isRefreshing,
-            onRefresh = {
-                haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                actions.onRefresh()
-                refreshTick.intValue++
-            },
-            state = pullToRefreshState,
-            indicator = {
-                PullToRefreshDefaults.LoadingIndicator(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    isRefreshing = uiState.isRefreshing,
-                    state = pullToRefreshState,
-                )
-            },
-        ) {
-            if (uiState.magiskInstalled) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        stringResource(R.string.module_magisk_conflict),
-                        textAlign = TextAlign.Center,
+        Box(modifier = Modifier.fillMaxSize()) {
+            PullToRefreshBox(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = {
+                    haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    actions.onRefresh()
+                    refreshTick.intValue++
+                },
+                state = pullToRefreshState,
+                indicator = {
+                    PullToRefreshDefaults.LoadingIndicator(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        isRefreshing = uiState.isRefreshing,
+                        state = pullToRefreshState,
                     )
+                },
+            ) {
+                if (uiState.magiskInstalled) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            stringResource(R.string.module_magisk_conflict),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    return@PullToRefreshBox
                 }
-                return@PullToRefreshBox
+                val latestModuleList = rememberUpdatedState(uiState.moduleList)
+                val latestRefreshing = rememberUpdatedState(uiState.isRefreshing)
+                ScrollToTopOnChange(
+                    listState,
+                    uiState.sortEnabledFirst,
+                    uiState.sortActionFirst,
+                    refreshTick.intValue,
+                    isBusy = { latestRefreshing.value },
+                ) { latestModuleList.value }
+                ModuleList(
+                    bottomInnerPadding = bottomInnerPadding,
+                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    listState = listState,
+                    displayModules = uiState.moduleList,
+                    updateInfoMap = uiState.updateInfo,
+                    showMoreModuleInfo = uiState.showMoreModuleInfo,
+                    moduleIcons = uiState.moduleIcons,
+                    actions = actions,
+                    onModuleAddShortcut = { module, type -> onModuleAddShortcut(module, type) },
+                )
             }
-            val latestModuleList = rememberUpdatedState(uiState.moduleList)
-            val latestRefreshing = rememberUpdatedState(uiState.isRefreshing)
-            ScrollToTopOnChange(
-                listState,
-                uiState.sortEnabledFirst,
-                uiState.sortActionFirst,
-                refreshTick.intValue,
-                isBusy = { latestRefreshing.value },
-            ) { latestModuleList.value }
-            ModuleList(
-                bottomInnerPadding = bottomInnerPadding,
-                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                listState = listState,
-                displayModules = uiState.moduleList,
-                updateInfoMap = uiState.updateInfo,
-                showMoreModuleInfo = uiState.showMoreModuleInfo,
-                moduleIcons = uiState.moduleIcons,
-                actions = actions,
-                onModuleAddShortcut = { module, type -> onModuleAddShortcut(module, type) },
-            )
+
+            ModuleSnackbar(
+                bottomBarPadding = bottomInnerPadding,
+                onHeightChanged = { snackbarHeight.intValue = it },
+            ) {
+                SnackBarHost(hostState = snackBarHost)
+            }
         }
     }
 
