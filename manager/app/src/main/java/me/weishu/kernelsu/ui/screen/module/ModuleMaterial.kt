@@ -131,6 +131,7 @@ import me.weishu.kernelsu.R
 import me.weishu.kernelsu.data.model.Module
 import me.weishu.kernelsu.data.model.ModuleUpdateInfo
 import me.weishu.kernelsu.data.repository.isSoftRebootPreferred
+import me.weishu.kernelsu.ui.component.ModuleIcon
 import me.weishu.kernelsu.ui.component.ObserveAsEvents
 import me.weishu.kernelsu.ui.component.ScrollToTopOnChange
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
@@ -353,6 +354,7 @@ fun ModulePagerMaterial(
                         displayModules = uiState.searchResults,
                         updateInfoMap = uiState.updateInfo,
                         showMoreModuleInfo = uiState.showMoreModuleInfo,
+                        moduleIcons = uiState.moduleIcons,
                         actions = actions,
                         onModuleAddShortcut = { module, type -> onModuleAddShortcut(module, type) },
                         closeSearch = closeSearch,
@@ -459,6 +461,7 @@ fun ModulePagerMaterial(
                 displayModules = uiState.moduleList,
                 updateInfoMap = uiState.updateInfo,
                 showMoreModuleInfo = uiState.showMoreModuleInfo,
+                moduleIcons = uiState.moduleIcons,
                 actions = actions,
                 onModuleAddShortcut = { module, type -> onModuleAddShortcut(module, type) },
             )
@@ -489,6 +492,7 @@ private fun ModuleList(
     displayModules: List<Module>,
     updateInfoMap: Map<String, ModuleUpdateInfo>,
     showMoreModuleInfo: Boolean,
+    moduleIcons: Map<String, String>,
     actions: ModuleActions,
     onModuleAddShortcut: (Module, ShortcutType) -> Unit,
     closeSearch: () -> Unit? = {},
@@ -512,6 +516,7 @@ private fun ModuleList(
                 module = module,
                 updateUrl = moduleUpdateInfo.downloadUrl,
                 showMoreModuleInfo = showMoreModuleInfo,
+                repoIconUrl = moduleIcons[module.id],
                 onUninstallClicked = {
                     if (module.remove) {
                         actions.onUndoUninstallModule(module)
@@ -703,6 +708,7 @@ private fun ModuleItem(
     module: Module,
     updateUrl: String,
     showMoreModuleInfo: Boolean,
+    repoIconUrl: String?,
     onUninstallClicked: () -> Unit,
     onCheckChanged: (Boolean) -> Unit,
     onUpdate: () -> Unit,
@@ -749,13 +755,20 @@ private fun ModuleItem(
                 Column(
                     modifier = Modifier.fillMaxWidth(0.8f)
                 ) {
-                    Text(
-                        text = module.name,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.titleMedium,
-                        lineHeight = MaterialTheme.typography.bodySmall.lineHeight,
-                        textDecoration = textDecoration,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        ModuleIcon(module = module, repoIconUrl = repoIconUrl)
+                        Text(
+                            text = module.name,
+                            modifier = Modifier.weight(1f, fill = false),
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleMedium,
+                            lineHeight = MaterialTheme.typography.bodySmall.lineHeight,
+                            textDecoration = textDecoration,
+                        )
+                    }
 
                     Text(
                         text = "$moduleVersion: ${module.version}",
@@ -771,38 +784,37 @@ private fun ModuleItem(
                         textDecoration = textDecoration
                     )
 
-                    if (showMoreModuleInfo) {
-                        if (module.id.isNotEmpty()) {
-                            Text(
-                                text = "${stringResource(id = R.string.module_id)}: ${module.id}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                textDecoration = textDecoration
+                    if (module.id.isNotEmpty()) {
+                        Text(
+                            text = "${stringResource(id = R.string.module_id)}: ${module.id}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            textDecoration = textDecoration
+                        )
+                    }
+
+                    if (showMoreModuleInfo && module.updateJson.isNotEmpty()) {
+                        Text(
+                            text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodySmall,
+                            textDecoration = textDecoration,
+                            maxLines = 5,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.combinedClickable(
+                                onClick = {},
+                                onLongClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Update JSON URL", module.updateJson))
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    Toast.makeText(
+                                        context,
+                                        updateJsonCopiedMessage,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             )
-                        }
-                        if (module.updateJson.isNotEmpty()) {
-                            Text(
-                                text = "${stringResource(id = R.string.module_update_json)}: ${module.updateJson}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                textDecoration = textDecoration,
-                                maxLines = 5,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.combinedClickable(
-                                    onClick = {},
-                                    onLongClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        clipboard.setPrimaryClip(ClipData.newPlainText("Update JSON URL", module.updateJson))
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        Toast.makeText(
-                                            context,
-                                            updateJsonCopiedMessage,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                )
-                            )
-                        }
+                        )
                     }
                 }
 

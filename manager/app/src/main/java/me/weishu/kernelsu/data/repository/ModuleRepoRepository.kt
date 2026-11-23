@@ -9,6 +9,12 @@ interface ModuleRepoRepository {
     suspend fun fetchModules(): Result<RepoModuleList>
 
     /**
+     * Registry icon URL of each module, keyed by module id, read from the last cached catalog.
+     * Never fetches: a list can render icons without requesting registry data per item.
+     */
+    suspend fun cachedModuleIcons(): Map<String, String>
+
+    /**
      * Detail (and readme) of a module in the current index. Fails with
      * [me.weishu.kernelsu.data.registry.ModuleNotInIndexException] if it is not listed.
      */

@@ -308,7 +308,6 @@ fun ColorPaletteScreenMaterial(
                             SegmentedSwitchItem(
                                 icon = Icons.Rounded.Info,
                                 title = stringResource(id = R.string.settings_show_more_module_info),
-                                summary = stringResource(id = R.string.settings_show_more_module_info_summary),
                                 checked = uiState.showMoreModuleInfo,
                                 onCheckedChange = actions.onSetShowMoreModuleInfo
                             )
@@ -317,7 +316,6 @@ fun ColorPaletteScreenMaterial(
                             SegmentedSwitchItem(
                                 icon = Icons.Rounded.Dashboard,
                                 title = stringResource(id = R.string.settings_simple_mode),
-                                summary = stringResource(id = R.string.settings_simple_mode_summary),
                                 checked = uiState.simpleMode,
                                 onCheckedChange = actions.onSetSimpleMode
                             )
@@ -335,7 +333,6 @@ fun ColorPaletteScreenMaterial(
                                 SegmentedSwitchItem(
                                     icon = Icons.AutoMirrored.Rounded.MenuOpen,
                                     title = stringResource(id = R.string.settings_enable_predictive_back),
-                                    summary = stringResource(id = R.string.settings_enable_predictive_back_summary),
                                     checked = uiState.enablePredictiveBack,
                                     onCheckedChange = actions.onSetEnablePredictiveBack
                                 )

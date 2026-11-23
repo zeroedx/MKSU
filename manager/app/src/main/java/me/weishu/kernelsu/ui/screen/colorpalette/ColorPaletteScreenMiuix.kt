@@ -380,7 +380,6 @@ fun ColorPaletteScreenMiuix(
                     ) {
                         SwitchPreference(
                             title = stringResource(id = R.string.settings_show_more_module_info),
-                            summary = stringResource(id = R.string.settings_show_more_module_info_summary),
                             startAction = {
                                 Icon(
                                     Icons.Rounded.Info,
@@ -394,7 +393,6 @@ fun ColorPaletteScreenMiuix(
                         )
                         SwitchPreference(
                             title = stringResource(id = R.string.settings_simple_mode),
-                            summary = stringResource(id = R.string.settings_simple_mode_summary),
                             startAction = {
                                 Icon(
                                     Icons.Rounded.Dashboard,
@@ -416,7 +414,6 @@ fun ColorPaletteScreenMiuix(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             SwitchPreference(
                                 title = stringResource(id = R.string.settings_enable_predictive_back),
-                                summary = stringResource(id = R.string.settings_enable_predictive_back_summary),
                                 startAction = {
                                     Icon(
                                         Icons.AutoMirrored.Rounded.MenuOpen,

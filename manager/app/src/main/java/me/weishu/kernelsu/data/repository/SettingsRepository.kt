@@ -41,6 +41,9 @@ interface SettingsRepository {
     /** Emits the current value and every later change, so screens react without a refresh. */
     val simpleModeFlow: Flow<Boolean>
 
+    /** Same contract as [simpleModeFlow], for the installed-module card details. */
+    val showMoreModuleInfoFlow: Flow<Boolean>
+
     suspend fun getFeatureSnapshots(features: List<String>): Map<String, FeatureSnapshot>
 
     suspend fun getSuCompatStatus(): String

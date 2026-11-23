@@ -40,6 +40,7 @@ class SettingsRepositoryImpl : SettingsRepository {
     private companion object {
         private const val INTENT_TOKEN_KEY = "intent_token"
         private const val SIMPLE_MODE_KEY = "simple_mode"
+        private const val SHOW_MORE_MODULE_INFO_KEY = "show_more_module_info"
         private val secureRandom = SecureRandom()
     }
 
@@ -128,8 +129,18 @@ class SettingsRepositoryImpl : SettingsRepository {
         set(value) = prefs.edit { putBoolean("module_sort_action_first", value) }
 
     override var showMoreModuleInfo: Boolean
-        get() = prefs.getBoolean("show_more_module_info", false)
-        set(value) = prefs.edit { putBoolean("show_more_module_info", value) }
+        get() = prefs.getBoolean(SHOW_MORE_MODULE_INFO_KEY, false)
+        set(value) = prefs.edit { putBoolean(SHOW_MORE_MODULE_INFO_KEY, value) }
+
+    override val showMoreModuleInfoFlow: Flow<Boolean> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == SHOW_MORE_MODULE_INFO_KEY) trySend(prefs.getBoolean(SHOW_MORE_MODULE_INFO_KEY, false))
+        }
+        // The listener must stay strongly reachable: SharedPreferences only holds it weakly.
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(prefs.getBoolean(SHOW_MORE_MODULE_INFO_KEY, false))
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
 
     override var simpleMode: Boolean
         get() = prefs.getBoolean(SIMPLE_MODE_KEY, false)

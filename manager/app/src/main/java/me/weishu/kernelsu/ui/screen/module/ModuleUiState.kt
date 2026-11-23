@@ -51,6 +51,8 @@ data class ModuleUiState(
     val modules: List<Module> = emptyList(),
     val moduleList: List<Module> = emptyList(),
     val updateInfo: Map<String, ModuleUpdateInfo> = emptyMap(),
+    /** Registry icon URL per module id, read from the cached catalog when the list loads. */
+    val moduleIcons: Map<String, String> = emptyMap(),
     val searchStatus: SearchStatus = SearchStatus(""),
     val searchResults: List<Module> = emptyList(),
     val sortEnabledFirst: Boolean = false,

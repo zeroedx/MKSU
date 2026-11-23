@@ -78,6 +78,14 @@ class RegistryClient(
     /** Returns the catalog in memory, or loads one (network, then cache). */
     fun catalog(): RegistryCatalog = current ?: loadCatalog().catalog
 
+    /**
+     * Last good catalog from memory or the on-disk cache only. Never touches the network, so
+     * screens can look up registry metadata (e.g. icons) while rendering a list.
+     */
+    fun cachedCatalog(): RegistryCatalog? = synchronized(lock) {
+        current ?: readCachedCatalog()?.also { current = it }
+    }
+
     private fun fetchCatalog(): RegistryCatalog {
         var lastError: Exception? = null
         repeat(2) {

@@ -85,6 +85,14 @@ class ModuleRepoRepositoryImpl : ModuleRepoRepository {
         }
     }
 
+    override suspend fun cachedModuleIcons(): Map<String, String> = withContext(Dispatchers.IO) {
+        runCatching {
+            client.cachedCatalog()?.modules.orEmpty()
+                .mapNotNull { summary -> summary.icon?.let { summary.id to client.resolve(it) } }
+                .toMap()
+        }.getOrDefault(emptyMap())
+    }
+
     override suspend fun fetchDetail(moduleId: String): Result<RepoModuleDetail> = withContext(Dispatchers.IO) {
         runCatching {
             val load = client.loadDetail(moduleId)

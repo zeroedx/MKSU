@@ -621,4 +621,29 @@ class RegistryClientTest {
             parser.parseDetail(detail("foo", b1, extra = ",\"kind\":\"script\""))
         }
     }
+
+    @Test
+    fun cachedCatalogIsServedFromDiskWithoutNetwork() {
+        val cache = MemoryCache()
+        val online = FakeFetcher()
+        online.set(indexUrl, index(b1))
+        online.set(listUrl, modules(b1, summary("foo"), summary("bar")))
+        client(online, cache).loadCatalog()
+
+        val offline = FakeFetcher().apply { this.offline = true }
+        val catalog = client(offline, cache).cachedCatalog()
+
+        assertNotNull(catalog)
+        assertEquals(listOf("foo", "bar"), catalog!!.modules.map { it.id })
+        assertEquals("assets/abc.png", catalog.modules.first().icon)
+        assertTrue(catalog.fromCache)
+        assertTrue(offline.calls.isEmpty())
+    }
+
+    @Test
+    fun cachedCatalogIsNullWhenNothingWasCached() {
+        val fetcher = FakeFetcher().apply { this.offline = true }
+        assertNull(client(fetcher).cachedCatalog())
+        assertTrue(fetcher.calls.isEmpty())
+    }
 }

@@ -90,6 +90,13 @@ class ModuleViewModel(
 
     init {
         viewModelScope.launchSearchQueryCollector(searchQuery, ::applySearchText)
+        // A pure display toggle: follow the preference so turning it off collapses the details
+        // without waiting for the next list refresh.
+        viewModelScope.launch {
+            settingsRepo.showMoreModuleInfoFlow.collect { enabled ->
+                _uiState.update { it.copy(showMoreModuleInfo = enabled) }
+            }
+        }
     }
 
     fun markNeedRefresh() {
@@ -242,11 +249,13 @@ class ModuleViewModel(
                 emptyList()
             }
         }
+        val moduleIcons = withContext(Dispatchers.IO) { registryRepo.cachedModuleIcons() }
 
         withContext(Dispatchers.Main) {
             _uiState.update {
                 it.copy(
                     modules = parsedModules,
+                    moduleIcons = moduleIcons,
                 )
             }
             // Trigger recalculation of moduleList
