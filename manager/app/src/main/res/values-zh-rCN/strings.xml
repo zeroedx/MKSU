@@ -154,7 +154,6 @@
     <string name="app_profile_template_import_empty">剪贴板为空！</string>
     <string name="app_profile_affects_following_apps">影响以下应用</string>
     <string name="settings_enable_predictive_back">预测性返回动画</string>
-    <string name="settings_enable_predictive_back_summary">页面跟随返回手势移动，松手后完成或复位；关闭后返回仍可用，只是页面不再跟随手势</string>
     <string name="settings_enable_swipe_dismiss">横移返回手势</string>
     <string name="settings_enable_swipe_dismiss_summary">从屏幕边缘横移返回上一页</string>
     <string name="settings_pager_gesture_mode">页面切换手势</string>
@@ -386,9 +385,7 @@
     <string name="settings_predictive_back_slide">滑动</string>
     <string name="settings_predictive_back_none">无预测动画</string>
     <string name="settings_show_more_module_info">显示更多模块信息</string>
-    <string name="settings_show_more_module_info_summary">在模块列表中显示模块 ID 和更新 JSON</string>
     <string name="settings_simple_mode">简洁模式</string>
-    <string name="settings_simple_mode_summary">首页保留状态、设备型号、内核和管理器版本，收起其余次要信息</string>
     <string name="install_partition_probe_failed">分区探测失败（退出码 %1$d）：%2$s</string>
     <string name="install_partition_probe_empty">未探测到可安装分区（slot 后缀：%1$s）</string>
     <string name="install_partition_unresolved">请选择明确的目标分区后再继续</string>

@@ -23,10 +23,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.DisplaySettings
-import androidx.compose.material.icons.rounded.ElectricalServices
-import androidx.compose.material.icons.rounded.Fence
 import androidx.compose.material.icons.rounded.FlashOn
-import androidx.compose.material.icons.rounded.FolderDelete
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LayersClear
 import androidx.compose.material.icons.rounded.Palette

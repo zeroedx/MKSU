@@ -133,7 +133,6 @@
     <string name="app_profile_template_import_empty">剪貼簿無內容！</string>
     <string name="app_profile_affects_following_apps">受影響 App 如下</string>
     <string name="settings_enable_predictive_back">預測性返回動畫</string>
-    <string name="settings_enable_predictive_back_summary">頁面跟隨返回手勢移動，放開後完成或復原；關閉後返回仍可用，頁面不再跟隨手勢</string>
     <string name="settings_enable_swipe_dismiss">橫移返回手勢</string>
     <string name="settings_enable_swipe_dismiss_summary">從螢幕邊緣橫移返回上一頁</string>
     <string name="settings_pager_gesture_mode">頁面切換手勢</string>

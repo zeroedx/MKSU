@@ -169,7 +169,6 @@
     <string name="app_profile_template_import_empty">Clipboard is empty!</string>
     <string name="app_profile_affects_following_apps">Affects the following apps</string>
     <string name="settings_enable_predictive_back">Predictive back animation</string>
-    <string name="settings_enable_predictive_back_summary">Pages follow the back gesture and settle when you release. Turning it off keeps back working, without the follow animation.</string>
     <string name="settings_enable_swipe_dismiss">Swipe back gesture</string>
     <string name="settings_enable_swipe_dismiss_summary">Swipe from the edge to return to the previous page.</string>
     <string name="settings_pager_gesture_mode">Pager gesture mode</string>
@@ -398,9 +397,7 @@
     <string name="settings_predictive_back_slide">Slide</string>
     <string name="settings_predictive_back_none">No predictive animation</string>
     <string name="settings_show_more_module_info">Show more module information</string>
-    <string name="settings_show_more_module_info_summary">Show the module ID and update JSON in the module list.</string>
     <string name="settings_simple_mode">Simple mode</string>
-    <string name="settings_simple_mode_summary">Keep the status and the device, kernel and manager versions on the home page, and collapse the secondary details.</string>
     <string name="install_partition_probe_failed">Partition probe failed (exit code %1$d): %2$s</string>
     <string name="install_partition_probe_empty">No installable partitions reported (slot suffix: %1$s)</string>
     <string name="install_partition_unresolved">Select a target partition before continuing</string>
