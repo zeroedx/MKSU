@@ -273,11 +273,29 @@ jobs:
 
       - name: Setup need_upload
         id: need_upload
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
         run: |
-          if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-            echo "UPLOAD=true" >> $GITHUB_OUTPUT
+          reason=""
+          if [ "$EVENT_NAME" != "push" ]; then
+            reason="event '$EVENT_NAME' is not a push"
+          elif [ "$REF" != "refs/heads/main" ]; then
+            reason="ref '$REF' is not refs/heads/main"
+          elif [ -z "$BOT_TOKEN" ]; then
+            reason="secret BOT_TOKEN is not set"
+          elif [ -z "$CHAT_ID" ]; then
+            reason="secret CHAT_ID is not set"
+          fi
+
+          if [ -n "$reason" ]; then
+            echo "UPLOAD=false" >> "$GITHUB_OUTPUT"
+            echo "[=] Telegram upload skipped: $reason"
           else
-            echo "UPLOAD=false" >> $GITHUB_OUTPUT
+            echo "UPLOAD=true" >> "$GITHUB_OUTPUT"
+            echo "[+] Telegram upload enabled: push to main with both secrets present"
           fi
 
       - name: Download gradle manager artifact
@@ -376,19 +394,75 @@ jobs:
           path: dist/*.apk
 
       - name: Upload to telegram
-        if: github.event_name != 'pull_request' && steps.need_upload.outputs.UPLOAD == 'true'
+        id: telegram
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.need_upload.outputs.UPLOAD == 'true'
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-          GITHUB_EVENT: ${{ toJson(github.event) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TITLE: Manager
+          COMPARE_URL: ${{ github.event.compare }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          TITLE: MKSU Manager
           BRANCH: ${{ github.ref_name }}
         run: |
-          if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-            export VERSION=$(git rev-list --count HEAD)
-            APK=$(find ./dist -name "*.apk")
-            pip3 install telethon
-            python3 $GITHUB_WORKSPACE/scripts/ksubot.py $APK
+          set -u
+
+          APK=$(find ./dist -maxdepth 1 -type f -name "*.apk" | sort | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "[-] Telegram upload failed: no signed APK in dist/"
+            exit 1
+          fi
+
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+
+          read_version_code() {
+            local apk="$1" tool bin code
+            for tool in aapt2 aapt; do
+              bin=$(command -v "$tool" || true)
+              if [ -z "$bin" ]; then
+                for candidate in "$SDK_ROOT"/build-tools/*/"$tool"; do
+                  if [ -x "$candidate" ]; then
+                    bin="$candidate"
+                  fi
+                done
+              fi
+              if [ -n "$bin" ]; then
+                code=$("$bin" dump badging "$apk" 2>/dev/null | sed -n "s/.*versionCode='\([0-9][0-9]*\)'.*/\1/p" | head -n 1 || true)
+                if [ -n "$code" ]; then
+                  printf '%s' "$code"
+                  return 0
+                fi
+              fi
+            done
+            return 1
+          }
+
+          VERSION=$(read_version_code "$APK" || true)
+          if [ -z "$VERSION" ]; then
+            # The repacked APK keeps the Gradle archive name, which ends with the versionCode.
+            VERSION=$(basename "$APK" .apk | sed -n 's/.*_\([0-9][0-9]*\)\(-[A-Za-z0-9._]*\)\{0,1\}$/\1/p')
+            if [ -n "$VERSION" ]; then
+              echo "[!] Could not read versionCode with aapt2/aapt; using the APK file name: $VERSION"
+            fi
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "[-] Telegram upload failed: cannot read versionCode from $APK"
+            exit 1
+          fi
+
+          echo "[+] Uploading $(basename "$APK") (versionCode $VERSION) to $CHAT_ID"
+          export VERSION
+
+          if ! python3 -m pip install --quiet telethon; then
+            echo "[-] Telegram upload failed: cannot install telethon"
+            exit 1
+          fi
+
+          if python3 "$GITHUB_WORKSPACE/scripts/ksubot.py" "$APK"; then
+            echo "[+] Telegram upload succeeded"
+          else
+            echo "[-] Telegram upload failed"
+            exit 1
           fi
