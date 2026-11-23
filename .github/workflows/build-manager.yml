@@ -483,9 +483,10 @@ jobs:
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
         run: |
+          # --jq is applied per page, so pagination keeps working without --slurp.
           list_apk_artifacts() {
-            gh api --paginate --slurp "/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
-              --jq '.[].artifacts[] | select(.name == "manager-gradle" or .name == "manager") | "\(.id) \(.name)"'
+            gh api --paginate "/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+              --jq '.artifacts[] | select(.name == "manager-gradle" or .name == "manager") | "\(.id) \(.name)"'
           }
 
           list_apk_artifacts > "$RUNNER_TEMP/apk-artifacts.txt"
@@ -498,7 +499,7 @@ jobs:
             done < "$RUNNER_TEMP/apk-artifacts.txt"
           fi
 
-          remaining=$(list_apk_artifacts | wc -l)
+          remaining=$(list_apk_artifacts | grep -c . || true)
           if [ "$remaining" -ne 0 ]; then
             echo "::error::$remaining APK artifact(s) still downloadable for this run"
             exit 1
