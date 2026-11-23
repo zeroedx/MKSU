@@ -717,7 +717,7 @@ private fun ModuleItem(
     var descriptionCanExpand by rememberSaveable(module.id) { mutableStateOf(true) }
     val updateJsonCopiedMessage = stringResource(R.string.module_update_json_copied)
     val context = LocalContext.current
-    val canOpenWebUi = module.hasWebUi && !module.remove && module.enabled
+    val canOpenWebUi = module.canOpenWebUi
     val cardInteractionSource = remember { MutableInteractionSource() }
     val descriptionInteractionSource = remember { MutableInteractionSource() }
 

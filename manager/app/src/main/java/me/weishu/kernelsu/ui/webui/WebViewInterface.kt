@@ -17,6 +17,7 @@ import android.util.Base64
 import android.util.Log
 import android.view.Window
 import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.pm.PackageInfoCompat
@@ -46,9 +47,22 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
-class WebViewInterface(private val state: WebUIState) {
-    private val webView get() = state.webView
+class WebViewInterface(
+    private val state: WebUIState,
+    private val postToMainThread: (Runnable) -> Unit = { MAIN_HANDLER.post(it) },
+) {
     private val modDir get() = state.modDir
+
+    /**
+     * Runs [action] on the main thread only while the module page is still alive. A shell command
+     * can outlive the page, so a late callback must be dropped instead of touching a destroyed
+     * WebView.
+     *
+     * Ported from BakaSU 7b65bde (GPL-3.0).
+     */
+    private fun postToWebView(action: (WebView) -> Unit) {
+        postToMainThread { state.webView?.let(action) }
+    }
 
     @JavascriptInterface
     fun exec(cmd: String): String {
@@ -97,9 +111,7 @@ class WebViewInterface(private val state: WebUIState) {
                     stdout
                 )
             }, ${JSONObject.quote(stderr)}); } catch(e) { console.error(e); } })();"
-        webView?.post {
-            webView?.loadUrl(jsCode)
-        }
+        postToWebView { it.loadUrl(jsCode) }
     }
 
     @JavascriptInterface
@@ -127,9 +139,7 @@ class WebViewInterface(private val state: WebUIState) {
                         data
                     )
                 }); } catch(e) { console.error('emitData', e); } })();"
-            webView?.post {
-                webView?.loadUrl(jsCode)
-            }
+            postToWebView { it.loadUrl(jsCode) }
         }
 
         val stdout = object : CallbackList<String>(UiThreadHandler::runAndWait) {
@@ -152,9 +162,7 @@ class WebViewInterface(private val state: WebUIState) {
         completableFuture.thenAccept { result ->
             val emitExitCode =
                 $$"javascript: (function() { try { $${callbackFunc}.emit('exit', $${result.code}); } catch(e) { console.error(`emitExit error: ${e}`); } })();"
-            webView?.post {
-                webView?.loadUrl(emitExitCode)
-            }
+            postToWebView { it.loadUrl(emitExitCode) }
 
             if (result.code != 0) {
                 val emitErrCode =
@@ -165,9 +173,7 @@ class WebViewInterface(private val state: WebUIState) {
                             )
                         )
                     };${callbackFunc}.emit('error', err); } catch(e) { console.error('emitErr', e); } })();"
-                webView?.post {
-                    webView?.loadUrl(emitErrCode)
-                }
+                postToWebView { it.loadUrl(emitErrCode) }
             }
         }.whenComplete { _, _ ->
             runCatching { shell.close() }
@@ -176,29 +182,27 @@ class WebViewInterface(private val state: WebUIState) {
 
     @JavascriptInterface
     fun toast(msg: String) {
-        webView?.post {
-            webView?.let { Toast.makeText(it.context, msg, Toast.LENGTH_SHORT).show() }
-        }
+        postToWebView { Toast.makeText(it.context, msg, Toast.LENGTH_SHORT).show() }
     }
 
     @JavascriptInterface
     fun fullScreen(enable: Boolean) {
-        val context = webView?.context
-        if (context is Activity) {
-            Handler(Looper.getMainLooper()).post {
+        postToWebView { view ->
+            val context = view.context
+            if (context is Activity) {
                 if (enable) {
                     hideSystemUI(context.window)
                 } else {
                     showSystemUI(context.window)
                 }
             }
+            state.isInsetsEnabled = enable
         }
-        enableEdgeToEdge(enable)
     }
 
     @JavascriptInterface
     fun enableEdgeToEdge(enable: Boolean = true) {
-        state.isInsetsEnabled = enable
+        postToWebView { state.isInsetsEnabled = enable }
     }
 
     @JavascriptInterface
@@ -289,6 +293,10 @@ class WebViewInterface(private val state: WebUIState) {
 
     fun destroy() {
         KsuIO.destroy()
+    }
+
+    private companion object {
+        val MAIN_HANDLER: Handler by lazy { Handler(Looper.getMainLooper()) }
     }
 }
 

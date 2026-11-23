@@ -67,7 +67,6 @@
     <string name="profile_selinux_rules">กฎ</string>
     <string name="module_downloading">กำลังดาวน์โหลดโมดูล: %s</string>
     <string name="module_start_downloading">กำลังเริ่มดาวน์โหลด: %s</string>
-    <string name="new_version_available">เวอร์ชัน %s พร้อมใช้งาน คลิกเพื่ออัปเกรด !</string>
     <string name="force_stop_app">บังคับหยุด</string>
     <string name="restart_app">รีสตาร์ท</string>
     <string name="settings_umount_modules_default_summary">หากเปิดใช้งานค่าเริ่มต้นโดยทั่วไปสำหรับ \"Umount โมดูล\" ในโปรไฟล์แอป จะเป็นการลบการแก้ไขโมดูลทั้งหมดในระบบสำหรับแอปพลิเคชันที่ไม่มีการตั้งค่าโปรไฟล์</string>

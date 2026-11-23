@@ -106,7 +106,6 @@
     <string name="module_downloading">正在下載模組：%s</string>
     <string name="module_start_downloading">開始下載：%s</string>
     <string name="module_action_success">模組執行成功</string>
-    <string name="new_version_available">現有新版本 %s，請即升級！</string>
     <string name="launch_app">啟動</string>
     <string name="force_stop_app">強制停止</string>
     <string name="restart_app">重新啟動</string>

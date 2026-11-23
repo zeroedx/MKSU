@@ -69,7 +69,6 @@
     <string name="module_update">Zaktualizuj</string>
     <string name="module_downloading">Pobieranie modułu: %s</string>
     <string name="module_start_downloading">Rozpocznij pobieranie: %s</string>
-    <string name="new_version_available">Nowa wersja %s jest dostępna. Kliknij, aby zaktualizować!</string>
     <string name="launch_app">Uruchom</string>
     <string name="force_stop_app">Wymuś zatrzymanie</string>
     <string name="restart_app">Restartuj</string>

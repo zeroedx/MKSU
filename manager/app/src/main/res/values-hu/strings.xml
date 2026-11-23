@@ -71,7 +71,6 @@
     <string name="profile_umount_modules">Modulok leválasztása</string>
     <string name="failed_to_update_app_profile">Nem sikerült frissíteni az App Profilt ehhez: %s</string>
     <string name="settings_umount_modules_default_summary">A \"Modulok leválasztása\" globális alapértelmezett értéke az App Profile-ban. Ha engedélyezve van, eltávolít minden modulmódosítást a rendszerből azon alkalmazások esetében, amelyeknek nincs profilja beállítva.</string>
-    <string name="new_version_available">Elérhető az új, %s verzió, kattintson a frissítéshez.</string>
     <string name="failed_to_update_sepolicy">Nem sikerült frissíteni az SELinux szabályokat a következőhöz: %s</string>
     <string name="home_lkm_update_available">Elérhető a beépített LKM újabb verziója. Érintse meg a frissítéshez.</string>
     <string name="home_lkm_custom">Egyedi</string>

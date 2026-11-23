@@ -62,7 +62,6 @@
     <string name="failed_to_update_app_profile">%s のアプリのプロファイルの更新をできませでした</string>
     <string name="profile_selinux_domain">ドメイン</string>
     <string name="profile_selinux_rules">ルール</string>
-    <string name="new_version_available">新しいバージョン %s が利用可能です。タップしてダウンロード!</string>
     <string name="module_update">アップデート</string>
     <string name="module_start_downloading">ダウンロードを開始: %s</string>
     <string name="launch_app">起動</string>

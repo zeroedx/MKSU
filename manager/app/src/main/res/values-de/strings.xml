@@ -36,7 +36,6 @@
     <string name="module_start_downloading">Starte Download: %s</string>
     <string name="failed_to_update_sepolicy">Aktualisieren der SELinux-Regeln schlug fehl für %s</string>
     <string name="launch_app">Starten</string>
-    <string name="new_version_available">Neue Version %s verfügbar, tippen zum Aktualisieren!</string>
     <string name="force_stop_app">Stopp erzwingen</string>
     <string name="restart_app">Neustarten</string>
     <string name="home_manager_version">Manager-Version</string>

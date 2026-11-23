@@ -53,7 +53,7 @@ class ModuleRepositoryImpl : ModuleRepository {
             if (!isNetworkAvailable(ksuApp)) {
                 return@runCatching ModuleUpdateInfo.Empty
             }
-            if (module.updateJson.isEmpty() || module.remove || module.update || !module.enabled) {
+            if (!module.canCheckForUpdate) {
                 return@runCatching ModuleUpdateInfo.Empty
             }
 

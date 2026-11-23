@@ -72,7 +72,6 @@
     <string name="launch_app">Запустити</string>
     <string name="force_stop_app">Примусова зупинка</string>
     <string name="restart_app">Перезапустити</string>
-    <string name="new_version_available">Доступна нова версія %s, натисніть, щоб оновити!</string>
     <string name="failed_to_update_sepolicy">Не вдалося оновити правила SELinux для %s</string>
     <string name="module_changelog">Журнал змін</string>
     <string name="home_lkm_update_available">Доступна новіша версія вбудованого LKM. Натисніть, щоб оновити.</string>

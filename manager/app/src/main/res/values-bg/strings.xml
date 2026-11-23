@@ -78,7 +78,6 @@
     <string name="module_update">Актуализиране</string>
     <string name="module_downloading">Изтегляне на модул: %s</string>
     <string name="module_start_downloading">Започни изтегляне: %s</string>
-    <string name="new_version_available">Нова версия %s е налична, натисни да актуализирате!</string>
     <string name="launch_app">Стартирай</string>
     <string name="force_stop_app">Принудително спиране</string>
     <string name="restart_app">Радтартирай</string>

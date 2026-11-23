@@ -72,7 +72,6 @@
     <string name="restart_app">Reiniciar</string>
     <string name="launch_app">Lançar</string>
     <string name="force_stop_app">Forçar parada</string>
-    <string name="new_version_available">Nova versão: %s está disponível, clique para baixar</string>
     <string name="home_lkm_update_available">Está disponível uma versão mais recente do LKM integrado. Toque para atualizar.</string>
     <string name="home_lkm_custom">Personalizado</string>
     <string name="require_manager_version">É necessário atualizar a aplicação.</string>

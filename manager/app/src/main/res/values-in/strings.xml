@@ -136,7 +136,6 @@
     <string name="module_downloading">Mengunduh modul: %s</string>
     <string name="module_start_downloading">Mulai mengunduh: %s</string>
     <string name="module_action_success">Aksi modul berhasil dieksekusi.</string>
-    <string name="new_version_available">Versi baru %s tersedia, ketuk untuk memperbarui!</string>
     <string name="launch_app">Luncurkan</string>
     <string name="force_stop_app">Paksa berhenti</string>
     <string name="restart_app">Muat ulang aplikasi</string>

@@ -75,7 +75,6 @@
     <string name="profile_selinux_domain">定域</string>
     <string name="module_update">更新</string>
     <string name="module_start_downloading">準備下載模組：%s</string>
-    <string name="new_version_available">版本 %s 現已開放下載，點選開始更新。</string>
     <string name="launch_app">開始執行</string>
     <string name="force_stop_app">強制停止</string>
     <string name="failed_to_update_sepolicy">無法為「%s」更新 SELinux 規則</string>

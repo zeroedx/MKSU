@@ -139,7 +139,6 @@
     <string name="module_downloading">Descargando módulo: %s</string>
     <string name="module_start_downloading">Iniciar descarga: %s</string>
     <string name="module_action_success">Acción del módulo ejecutada correctamente.</string>
-    <string name="new_version_available">La nueva versión %s está disponible, haga clic para actualizar.</string>
     <string name="launch_app">Iniciar</string>
     <string name="force_stop_app">Forzar detención</string>
     <string name="restart_app">Reiniciar</string>

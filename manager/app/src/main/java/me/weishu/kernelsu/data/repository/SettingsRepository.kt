@@ -5,7 +5,6 @@ import me.weishu.kernelsu.ui.util.FeatureSnapshot
 
 interface SettingsRepository {
     var uiMode: String
-    var checkUpdate: Boolean
     var checkModuleUpdate: Boolean
     var themeMode: Int
     var miuixMonet: Boolean

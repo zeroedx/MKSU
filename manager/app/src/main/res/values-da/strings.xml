@@ -44,7 +44,6 @@
     <string name="profile_umount_modules_summary">Hvis denne indstilling aktiveres, kan MKSU gendanne alle ændrede filer af modulerne til denne app.</string>
     <string name="module_update">Opdatering</string>
     <string name="module_downloading">Downloader modulet: %s</string>
-    <string name="new_version_available">Ny version %s er tilgængelig, klik for at opgradere!</string>
     <string name="launch_app">Start</string>
     <string name="force_stop_app">Tving stop</string>
     <string name="failed_to_update_sepolicy">Opdatering af SELinux-regler mislykkedes for %s</string>

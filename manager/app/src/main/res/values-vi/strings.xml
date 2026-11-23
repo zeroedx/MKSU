@@ -13,7 +13,6 @@
     <string name="module_update">Cập nhật</string>
     <string name="module_downloading">Đang tải xuống module: %s</string>
     <string name="module_start_downloading">Bắt đầu tải xuống: %s</string>
-    <string name="new_version_available">Phiên bản mới %s đã có sẵn, nhấn để cập nhật!</string>
     <string name="home_learn_kernelsu">Tìm hiểu về MKSU</string>
     <string name="home_click_to_learn_kernelsu">Tìm hiểu cách cài đặt MKSU và sử dụng các module.</string>
     <string name="home_support_title">Ủng hộ chúng tôi</string>

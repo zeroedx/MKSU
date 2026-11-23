@@ -52,7 +52,6 @@
     <string name="profile_selinux_rules">Mga Tuntunin</string>
     <string name="module_downloading">Nagda-download ng modyul: %s</string>
     <string name="module_start_downloading">Simulan ang pag-download: %s</string>
-    <string name="new_version_available">Bagong bersyon: Available ang %s, i-click para mag-upgrade.</string>
     <string name="launch_app">Ilunsad</string>
     <string name="force_stop_app">Sapilitang itigil</string>
     <string name="restart_app">I-restart</string>

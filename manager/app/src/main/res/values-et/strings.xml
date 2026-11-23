@@ -80,7 +80,6 @@
     <string name="profile_selinux_rules">Reeglid</string>
     <string name="module_update">Uuenda</string>
     <string name="module_downloading">Mooduli allalaadimine: %s</string>
-    <string name="new_version_available">Uus versioon %s on saadaval, klõpsa täiendamiseks.</string>
     <string name="restart_app">Taaskäivita</string>
     <string name="module_changelog">Muudatuste logi</string>
     <string name="app_profile_template_name">Nimi</string>

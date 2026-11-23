@@ -1,7 +1,6 @@
 package me.weishu.kernelsu.ui.viewmodel
 
 import android.os.Build
-import android.os.SystemClock
 import android.system.Os
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,13 +21,9 @@ import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.ui.screen.home.HomeUiState
 import me.weishu.kernelsu.ui.screen.home.SystemInfo
 import me.weishu.kernelsu.ui.screen.home.getManagerVersion
-import me.weishu.kernelsu.ui.util.checkNewVersion
 import me.weishu.kernelsu.ui.util.getSELinuxStatusRaw
-import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import me.weishu.kernelsu.ui.util.resolveDeviceName
 import me.weishu.kernelsu.ui.util.rootAvailable
-
-private const val UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000L
 
 class HomeViewModel(
     private val settingsRepo: SettingsRepository = SettingsRepositoryImpl()
@@ -40,7 +35,6 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var refreshJob: Job? = null
-    private var lastUpdateCheckAt = 0L
 
     init {
         // Simple mode is a pure display toggle: flip it from the preference so returning from
@@ -60,13 +54,6 @@ class HomeViewModel(
             // The preference flow owns simpleMode; re-read it so a toggle made while the probe was
             // running is not rolled back by the result.
             _uiState.update { baseState.copy(simpleMode = settingsRepo.simpleMode) }
-            if (!baseState.checkUpdateEnabled) return@launch
-            // The GitHub call must not run on every tab switch; a stale result is good enough.
-            val now = SystemClock.elapsedRealtime()
-            if (now - lastUpdateCheckAt < UPDATE_CHECK_INTERVAL_MS) return@launch
-            lastUpdateCheckAt = now
-            val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
-            _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
         }
     }
 
@@ -96,9 +83,7 @@ class HomeViewModel(
             isRootAvailable = isRootAvailable,
             isSafeMode = Natives.isSafeMode,
             isLateLoadMode = Natives.isLateLoadMode,
-            checkUpdateEnabled = settingsRepo.checkUpdate,
             simpleMode = settingsRepo.simpleMode,
-            latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
                 kernelVersion = Os.uname().release,

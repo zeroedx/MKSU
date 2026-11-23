@@ -64,7 +64,6 @@
     <string name="module_update">Atjaunināt</string>
     <string name="module_downloading">Lejupielādē moduli: %s</string>
     <string name="module_start_downloading">Sākt lejupielādi: %s</string>
-    <string name="new_version_available">Jaunā versija: %s ir pieejama, noklikšķiniet, lai atjauninātu</string>
     <string name="launch_app">Palaist</string>
     <string name="force_stop_app">Piespiedu apstāšana</string>
     <string name="restart_app">Restartēt aplikāciju</string>
