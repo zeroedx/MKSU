@@ -22,7 +22,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -126,8 +125,6 @@ import me.weishu.kernelsu.ui.util.rememberBlurBackdrop
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownImpl
-import top.yukonga.miuix.kmp.basic.FloatingActionButton
-import top.yukonga.miuix.kmp.basic.FloatingActionButtonDefaults
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -224,9 +221,46 @@ fun ModulePagerMiuix(
 
     val scope = rememberCoroutineScope()
     val snackbarJob = remember { mutableStateOf<Job?>(null) }
-    val snackbarHeight = remember { mutableIntStateOf(0) }
-    // The job is cleared when the snackbar finishes, so a non-null job means one is on screen.
-    val fabClearance = rememberSnackbarClearance(snackbarJob.value != null, snackbarHeight.intValue)
+    val moduleInstall = stringResource(id = R.string.module_install)
+    val installConfirmTitle = stringResource(R.string.module)
+    var zipUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val installConfirmDialog = rememberConfirmDialog(
+        onConfirm = {
+            actions.onOpenFlash(zipUris)
+        }
+    )
+    val selectZipLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { activityResult ->
+        val uris = mutableListOf<Uri>()
+        if (activityResult.resultCode != RESULT_OK) {
+            return@rememberLauncherForActivityResult
+        }
+        val data = activityResult.data ?: return@rememberLauncherForActivityResult
+        val clipData = data.clipData
+
+        if (clipData != null) {
+            for (i in 0 until clipData.itemCount) {
+                clipData.getItemAt(i)?.uri?.let { uris.add(it) }
+            }
+        } else {
+            data.data?.let { uris.add(it) }
+        }
+
+        if (uris.size == 1) {
+            actions.onOpenFlash(listOf(uris.first()))
+        } else if (uris.size > 1) {
+            // multiple files selected
+            zipUris = uris
+            val moduleNames = uris.mapIndexed { index, uri -> "\n${index + 1}. ${uri.getFileName(context)}" }.joinToString("")
+            val confirmContent = installPromptWithName.format(moduleNames)
+            installConfirmDialog.showConfirm(
+                title = installConfirmTitle,
+                content = confirmContent
+            )
+        }
+    }
+
     ObserveAsEvents(moduleEvent) { event ->
         when (event) {
             is ModuleEffect.Toast -> {
@@ -240,18 +274,13 @@ fun ModulePagerMiuix(
                 // Soft reboot keeps the jailbreak and still applies module changes
                 val softReboot = isSoftRebootPreferred()
                 snackbarJob.value = scope.launch {
-                    try {
-                        val result = snackbarHostState.showSnackbar(
-                            message = event.message,
-                            actionLabel = context.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
-                            duration = SnackbarDuration.Long,
-                        )
-                        if (result == SnackbarResult.ActionPerformed) {
-                            reboot(if (softReboot) "soft_reboot" else "")
-                        }
-                    } finally {
-                        // Only the newest snackbar owns the install button clearance
-                        if (snackbarJob.value === coroutineContext[Job]) snackbarJob.value = null
+                    val result = snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = context.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
+                        duration = SnackbarDuration.Long,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        reboot(if (softReboot) "soft_reboot" else "")
                     }
                 }
             }
@@ -279,6 +308,24 @@ fun ModulePagerMiuix(
                         color = barColor,
                         title = stringResource(R.string.module),
                         actions = {
+                            if (uiState.installButtonVisible) {
+                                IconButton(
+                                    onClick = {
+                                        // Select the zip files to install
+                                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                            type = "application/zip"
+                                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                        }
+                                        selectZipLauncher.launch(intent)
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Add,
+                                        tint = colorScheme.onSurface,
+                                        contentDescription = moduleInstall
+                                    )
+                                }
+                            }
                             Box {
                                 val showTopPopup = remember { mutableStateOf(false) }
                                 IconButton(
@@ -366,71 +413,6 @@ fun ModulePagerMiuix(
                 }
             }
         },
-        floatingActionButton = {
-            if (uiState.installButtonVisible) {
-                val moduleInstall = stringResource(id = R.string.module_install)
-                val confirmTitle = stringResource(R.string.module)
-                var zipUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
-                val confirmDialog = rememberConfirmDialog(
-                    onConfirm = {
-                        actions.onOpenFlash(zipUris)
-                    }
-                )
-                val selectZipLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartActivityForResult()
-                ) { activityResult ->
-                    val uris = mutableListOf<Uri>()
-                    if (activityResult.resultCode != RESULT_OK) {
-                        return@rememberLauncherForActivityResult
-                    }
-                    val data = activityResult.data ?: return@rememberLauncherForActivityResult
-                    val clipData = data.clipData
-
-                    if (clipData != null) {
-                        for (i in 0 until clipData.itemCount) {
-                            clipData.getItemAt(i)?.uri?.let { uris.add(it) }
-                        }
-                    } else {
-                        data.data?.let { uris.add(it) }
-                    }
-
-                    if (uris.size == 1) {
-                        actions.onOpenFlash(listOf(uris.first()))
-                    } else if (uris.size > 1) {
-                        // multiple files selected
-                        zipUris = uris
-                        val moduleNames = uris.mapIndexed { index, uri -> "\n${index + 1}. ${uri.getFileName(context)}" }.joinToString("")
-                        val confirmContent = installPromptWithName.format(moduleNames)
-                        confirmDialog.showConfirm(
-                            title = confirmTitle,
-                            content = confirmContent
-                        )
-                    }
-                }
-                FloatingActionButton(
-                    modifier = Modifier
-                        .padding(bottom = bottomInnerPadding + 20.dp + fabClearance, end = 20.dp)
-                        .border(0.05.dp, colorScheme.outline.copy(alpha = 0.5f), CircleShape),
-                    shadowElevation = 0.dp,
-                    onClick = {
-                        // Select the zip files to install
-                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                            type = "application/zip"
-                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        }
-                        selectZipLauncher.launch(intent)
-                    },
-                    content = {
-                        Icon(
-                            Icons.Rounded.Add,
-                            moduleInstall,
-                            modifier = Modifier.size(40.dp),
-                            tint = colorScheme.onPrimary
-                        )
-                    },
-                )
-            }
-        },
         popupHost = {
             searchStatus.SearchPager(
                 onSearchStatusChange = actions.onSearchStatusChange,
@@ -487,7 +469,7 @@ fun ModulePagerMiuix(
                     top = innerPadding.calculateTopPadding() + 6.dp,
                     start = innerPadding.calculateStartPadding(layoutDirection),
                     end = innerPadding.calculateEndPadding(layoutDirection),
-                    bottom = bottomInnerPadding + FloatingActionButtonDefaults.MinHeight + 20.dp + 12.dp,
+                    bottom = bottomInnerPadding + 12.dp,
                 )
                 PullToRefresh(
                     isRefreshing = uiState.isRefreshing,
@@ -554,10 +536,7 @@ fun ModulePagerMiuix(
                 }
             }
 
-            ModuleSnackbar(
-                bottomBarPadding = bottomInnerPadding,
-                onHeightChanged = { snackbarHeight.intValue = it },
-            ) {
+            ModuleSnackbar(bottomBarPadding = bottomInnerPadding) {
                 SnackbarHost(state = snackbarHostState)
             }
         }
@@ -815,11 +794,6 @@ fun ModuleItem(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ModuleIcon(
-                module = module,
-                repoIconUrl = repoIconUrl,
-                modifier = Modifier.align(Alignment.Top),
-            )
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -828,49 +802,59 @@ fun ModuleItem(
                 val moduleVersion = stringResource(id = R.string.module_version)
                 val moduleAuthor = stringResource(id = R.string.module_author)
 
-                SubcomposeLayout { constraints ->
-                    val spacingPx = 6.dp.roundToPx()
-                    var nameTextLayout: TextLayoutResult? = null
-                    val metaPlaceable = if (module.metamodule) {
-                        subcompose("meta") {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    ModuleIcon(
+                        module = module,
+                        repoIconUrl = repoIconUrl,
+                        size = 20.dp,
+                    )
+                    SubcomposeLayout(modifier = Modifier.weight(1f, fill = false)) { constraints ->
+                        val spacingPx = 6.dp.roundToPx()
+                        var nameTextLayout: TextLayoutResult? = null
+                        val metaPlaceable = if (module.metamodule) {
+                            subcompose("meta") {
+                                Text(
+                                    text = "META",
+                                    fontSize = 12.sp,
+                                    color = updateTint,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(updateBg)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontWeight = FontWeight(750),
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }.first().measure(Constraints(0, constraints.maxWidth, 0, constraints.maxHeight))
+                        } else null
+
+                        val reserved = (metaPlaceable?.width ?: 0) + if (metaPlaceable != null) spacingPx else 0
+                        val nameMax = (constraints.maxWidth - reserved).coerceAtLeast(0)
+                        val namePlaceable = subcompose("name") {
                             Text(
-                                text = "META",
-                                fontSize = 12.sp,
-                                color = updateTint,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(updateBg)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                                fontWeight = FontWeight(750),
-                                maxLines = 1,
-                                softWrap = false
+                                text = module.name,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight(550),
+                                color = colorScheme.onSurface,
+                                textDecoration = textDecoration,
+                                onTextLayout = { nameTextLayout = it }
                             )
-                        }.first().measure(Constraints(0, constraints.maxWidth, 0, constraints.maxHeight))
-                    } else null
+                        }.first().measure(Constraints(constraints.minWidth, nameMax, constraints.minHeight, constraints.maxHeight))
 
-                    val reserved = (metaPlaceable?.width ?: 0) + if (metaPlaceable != null) spacingPx else 0
-                    val nameMax = (constraints.maxWidth - reserved).coerceAtLeast(0)
-                    val namePlaceable = subcompose("name") {
-                        Text(
-                            text = module.name,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight(550),
-                            color = colorScheme.onSurface,
-                            textDecoration = textDecoration,
-                            onTextLayout = { nameTextLayout = it }
-                        )
-                    }.first().measure(Constraints(constraints.minWidth, nameMax, constraints.minHeight, constraints.maxHeight))
+                        val width = (namePlaceable.width + reserved).coerceIn(constraints.minWidth, constraints.maxWidth)
+                        val height = maxOf(namePlaceable.height, metaPlaceable?.height ?: 0)
 
-                    val width = (namePlaceable.width + reserved).coerceIn(constraints.minWidth, constraints.maxWidth)
-                    val height = maxOf(namePlaceable.height, metaPlaceable?.height ?: 0)
-
-                    layout(width, height) {
-                        namePlaceable.placeRelative(0, 0)
-                        val endX = nameTextLayout?.let { layoutRes ->
-                            val last = (layoutRes.lineCount - 1).coerceAtLeast(0)
-                            layoutRes.getLineRight(last).toInt()
-                        } ?: namePlaceable.width
-                        metaPlaceable?.placeRelative(endX + spacingPx, (height - (metaPlaceable.height)) / 2)
+                        layout(width, height) {
+                            namePlaceable.placeRelative(0, 0)
+                            val endX = nameTextLayout?.let { layoutRes ->
+                                val last = (layoutRes.lineCount - 1).coerceAtLeast(0)
+                                layoutRes.getLineRight(last).toInt()
+                            } ?: namePlaceable.width
+                            metaPlaceable?.placeRelative(endX + spacingPx, (height - (metaPlaceable.height)) / 2)
+                        }
                     }
                 }
                 Text(

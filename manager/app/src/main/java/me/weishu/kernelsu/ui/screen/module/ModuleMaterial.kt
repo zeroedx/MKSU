@@ -76,7 +76,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -91,7 +90,6 @@ import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -110,7 +108,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -168,39 +165,6 @@ fun ModulePagerMaterial(
     val listState = rememberLazyListState()
     val searchListState = rememberLazyListState()
     val refreshTick = remember { mutableIntStateOf(0) }
-    val threshold = with(LocalDensity.current) { 100.dp.toPx() }
-    val fabExpanded by remember {
-        var lastIndex = 0
-        var lastOffset = 0
-        var scrollDelta = 0f
-        var expanded = true
-        derivedStateOf {
-            val currentIndex = listState.firstVisibleItemIndex
-            val currentOffset = listState.firstVisibleItemScrollOffset
-            val delta = if (currentIndex == lastIndex) {
-                (currentOffset - lastOffset).toFloat()
-            } else if (currentIndex > lastIndex) {
-                100f
-            } else {
-                -100f
-            }
-            scrollDelta = (scrollDelta + delta).coerceIn(-threshold, threshold)
-            lastIndex = currentIndex
-            lastOffset = currentOffset
-            if (currentIndex == 0) {
-                expanded = true
-                scrollDelta = 0f
-            } else if (expanded && scrollDelta >= threshold) {
-                expanded = false
-                scrollDelta = 0f
-            } else if (!expanded && scrollDelta <= -threshold) {
-                expanded = true
-                scrollDelta = 0f
-            }
-            expanded
-        }
-    }
-
     val shortcutState = rememberModuleShortcutState(context)
     val showShortcutDialog = remember { mutableStateOf(false) }
     val confirmDialog = rememberConfirmDialog(
@@ -246,9 +210,28 @@ fun ModulePagerMaterial(
 
     val scope = rememberCoroutineScope()
     val snackbarJob = remember { mutableStateOf<Job?>(null) }
-    val snackbarHeight = remember { mutableIntStateOf(0) }
-    // The job is cleared when the snackbar finishes, so a non-null job means one is on screen.
-    val fabClearance = rememberSnackbarClearance(snackbarJob.value != null, snackbarHeight.intValue)
+    val moduleInstall = stringResource(id = R.string.module_install)
+    val selectZipLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { activityResult ->
+        if (activityResult.resultCode != RESULT_OK) {
+            return@rememberLauncherForActivityResult
+        }
+        val data = activityResult.data ?: return@rememberLauncherForActivityResult
+        val clipData = data.clipData
+
+        val uris = mutableListOf<Uri>()
+        if (clipData != null) {
+            for (i in 0 until clipData.itemCount) {
+                clipData.getItemAt(i)?.uri?.let { uris.add(it) }
+            }
+        } else {
+            data.data?.let { uris.add(it) }
+        }
+
+        actions.onOpenFlash(uris)
+    }
+
     ObserveAsEvents(moduleEvent) { event ->
         when (event) {
             is ModuleEffect.Toast -> {
@@ -262,18 +245,13 @@ fun ModulePagerMaterial(
                 // Soft reboot keeps the jailbreak and still applies module changes
                 val softReboot = isSoftRebootPreferred()
                 snackbarJob.value = scope.launch {
-                    try {
-                        val result = snackBarHost.showSnackbar(
-                            message = event.message,
-                            actionLabel = resource.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
-                            duration = SnackbarDuration.Long
-                        )
-                        if (result == SnackbarResult.ActionPerformed) {
-                            reboot(if (softReboot) "soft_reboot" else "")
-                        }
-                    } finally {
-                        // Only the newest snackbar owns the install button clearance
-                        if (snackbarJob.value === coroutineContext[Job]) snackbarJob.value = null
+                    val result = snackBarHost.showSnackbar(
+                        message = event.message,
+                        actionLabel = resource.getString(if (softReboot) R.string.reboot_soft else R.string.reboot),
+                        duration = SnackbarDuration.Long
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        reboot(if (softReboot) "soft_reboot" else "")
                     }
                 }
             }
@@ -299,6 +277,23 @@ fun ModulePagerMaterial(
                     }
                 },
                 actions = {
+                    if (uiState.installButtonVisible) {
+                        IconButton(
+                            onClick = {
+                                // Select the zip files to install
+                                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                    type = "application/zip"
+                                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                }
+                                selectZipLauncher.launch(intent)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = moduleInstall
+                            )
+                        }
+                    }
                     var showDropdown by remember { mutableStateOf(false) }
                     IconButton(
                         onClick = { showDropdown = true }
@@ -370,46 +365,6 @@ fun ModulePagerMaterial(
                 }
             )
         },
-        floatingActionButton = {
-            if (uiState.installButtonVisible) {
-                val moduleInstall = stringResource(id = R.string.module_install)
-                val selectZipLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartActivityForResult()
-                ) { activityResult ->
-                    if (activityResult.resultCode != RESULT_OK) {
-                        return@rememberLauncherForActivityResult
-                    }
-                    val data = activityResult.data ?: return@rememberLauncherForActivityResult
-                    val clipData = data.clipData
-
-                    val uris = mutableListOf<Uri>()
-                    if (clipData != null) {
-                        for (i in 0 until clipData.itemCount) {
-                            clipData.getItemAt(i)?.uri?.let { uris.add(it) }
-                        }
-                    } else {
-                        data.data?.let { uris.add(it) }
-                    }
-
-                    actions.onOpenFlash(uris)
-                }
-
-                SmallExtendedFloatingActionButton(
-                    modifier = Modifier.padding(bottom = bottomInnerPadding + fabClearance),
-                    expanded = fabExpanded,
-                    onClick = {
-                        // Select the zip files to install
-                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                            type = "application/zip"
-                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        }
-                        selectZipLauncher.launch(intent)
-                    },
-                    icon = { Icon(Icons.Filled.Add, moduleInstall) },
-                    text = { Text(text = moduleInstall) },
-                )
-            }
-        },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -468,10 +423,7 @@ fun ModulePagerMaterial(
                 )
             }
 
-            ModuleSnackbar(
-                bottomBarPadding = bottomInnerPadding,
-                onHeightChanged = { snackbarHeight.intValue = it },
-            ) {
+            ModuleSnackbar(bottomBarPadding = bottomInnerPadding) {
                 SnackBarHost(hostState = snackBarHost)
             }
         }
@@ -514,7 +466,7 @@ private fun ModuleList(
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            bottom = 16.dp + bottomInnerPadding + 56.dp + 16.dp
+            bottom = bottomInnerPadding + 16.dp
         ),
     ) {
         items(displayModules, key = { it.id }, contentType = { "module" }) { module ->
@@ -766,9 +718,9 @@ private fun ModuleItem(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        ModuleIcon(module = module, repoIconUrl = repoIconUrl)
+                        ModuleIcon(module = module, repoIconUrl = repoIconUrl, size = 20.dp)
                         Text(
                             text = module.name,
                             modifier = Modifier.weight(1f, fill = false),
