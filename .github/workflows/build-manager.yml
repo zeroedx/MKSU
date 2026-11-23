@@ -244,7 +244,7 @@ jobs:
               -PMKSU_CERT_SHA256="$MKSU_CERT_SHA256"
           fi
 
-      # Repack input; on main it is removed again by cleanup-apk-artifacts so main keeps no downloadable APK.
+      # Repack input; cleanup-apk-artifacts removes it again on main, where only the signed APK is kept.
       - name: Upload build artifact
         if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
@@ -388,13 +388,14 @@ jobs:
             -S "$SIGN_KEY_PASSWORD" \
             --strip
 
-      # dev/PR/tag keep the test package; main ships through Telegram only.
+      # The signed APK: dev/PR/tag use it as the test package, main keeps it for download next to Telegram.
       - name: Upload build artifact
-        if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && github.ref == 'refs/heads/dev') || github.ref_type == 'tag' }}
+        if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
         with:
           name: manager
           path: dist/*.apk
+          if-no-files-found: error
 
       - name: Upload to telegram
         id: telegram
@@ -477,31 +478,37 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Delete APK artifacts of this run
+      - name: Delete the manager-gradle artifact of this run
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          # --jq is applied per page, so pagination keeps working without --slurp.
-          list_apk_artifacts() {
-            gh api --paginate "/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
-              --jq '.artifacts[] | select(.name == "manager-gradle" or .name == "manager") | "\(.id) \(.name)"'
+          list_artifacts() {
+            gh api --paginate "/repos/$REPO/actions/runs/$RUN_ID/artifacts" > "$RUNNER_TEMP/artifacts.json"
+            jq -s -r --arg name "$1" '.[].artifacts[] | select(.name == $name) | "\(.id) \(.name)"' \
+              "$RUNNER_TEMP/artifacts.json"
           }
 
-          list_apk_artifacts > "$RUNNER_TEMP/apk-artifacts.txt"
-          if [ ! -s "$RUNNER_TEMP/apk-artifacts.txt" ]; then
-            echo "No APK artifacts to delete"
+          list_artifacts manager-gradle > "$RUNNER_TEMP/gradle-artifacts.txt"
+          if [ ! -s "$RUNNER_TEMP/gradle-artifacts.txt" ]; then
+            echo "No manager-gradle artifact to delete"
           else
             while read -r id name; do
               echo "Deleting artifact $name ($id)"
               gh api -X DELETE "/repos/$REPO/actions/artifacts/$id"
-            done < "$RUNNER_TEMP/apk-artifacts.txt"
+            done < "$RUNNER_TEMP/gradle-artifacts.txt"
           fi
 
-          remaining=$(list_apk_artifacts | grep -c . || true)
+          remaining=$(list_artifacts manager-gradle | grep -c . || true)
           if [ "$remaining" -ne 0 ]; then
-            echo "::error::$remaining APK artifact(s) still downloadable for this run"
+            echo "::error::$remaining manager-gradle artifact(s) still downloadable for this run"
             exit 1
           fi
-          echo "No APK artifacts remain for this run"
+
+          kept=$(list_artifacts manager | grep -c . || true)
+          if [ "$kept" -eq 0 ]; then
+            echo "::error::the signed manager APK artifact is missing from this run"
+            exit 1
+          fi
+          echo "manager-gradle removed, $kept signed manager APK artifact(s) kept"
