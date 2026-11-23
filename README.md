@@ -1,8 +1,9 @@
 <div align="center">
   <img src="docs/assets/mksu-icon.png" width="96" alt="MKSU 图标">
-
   <h1>MKSU</h1>
-  <p><strong>专注环境隐藏与权限隔离的 Android 内核级 Root 方案</strong></p>
+  <a href="https://t.me/mksu_build">
+    <img src="https://cdn.simpleicons.org/telegram/26A5E4" width="24" height="24" alt="Telegram 频道">
+  </a>
 </div>
 
 ## 鸣谢
