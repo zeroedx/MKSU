@@ -10,7 +10,7 @@
 
 ## Project Overview
 
-KernelSU is a kernel-based root solution for Android with a kernel module, Rust userspace daemons, a Kotlin Manager app, and docs/web assets.
+MKSU is a kernel-based root solution for Android with a kernel module, Rust userspace daemons, a Kotlin Manager app, and JavaScript support for module WebUI.
 
 ## Repository Structure
 
@@ -19,7 +19,6 @@ KernelSU is a kernel-based root solution for Android with a kernel module, Rust 
 /userspace/ksud/              # Userspace daemon - Rust binary for userspace-kernel communication
 /userspace/meta-overlayfs/    # Meta-overlay filesystem implementation - Rust binary + scripts
 /manager/                     # Android manager app - Kotlin/Jetpack Compose UI
-/website/                     # Documentation website - VitePress
 /js/                          # JavaScript library for module WebUI
 /.github/workflows/           # CI/CD workflows for building and testing
 /scripts/                     # Build automation scripts (Python)
@@ -63,15 +62,6 @@ cp ../userspace/ksud/target/aarch64-linux-android/release/ksud app/src/main/jniL
 ```
 
 Important: Manager build REQUIRES ksud binaries to be present in `jniLibs` before building.
-
-### Website (`website/`)
-
-```bash
-cd website
-# Using bun (preferred)
-bun install
-bun run docs:build  # Production build
-```
 
 ### JavaScript Web UI (`js/`)
 
