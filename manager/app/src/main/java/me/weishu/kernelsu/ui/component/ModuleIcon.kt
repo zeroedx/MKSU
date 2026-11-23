@@ -12,7 +12,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -131,19 +130,28 @@ private sealed interface AppIconState {
 private fun rememberAppIcon(applicationInfo: ApplicationInfo, size: Dp): AppIconState {
     val context = LocalContext.current
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
-    val state by produceState<AppIconState>(
-        initialValue = AppIconCache.getCached(applicationInfo, sizePx)
-            ?.let(AppIconState::Loaded) ?: AppIconState.Loading,
-        applicationInfo,
-        sizePx,
-    ) {
-        if (value !is AppIconState.Loaded) {
-            value = withContext(Dispatchers.IO) {
+    // Deliberately not keyed: the bitmap resolved for the previous key stays on screen until the
+    // current one is resolved, so an updated app does not blank its icon while the new one loads.
+    val state = remember {
+        mutableStateOf<AppIconState>(
+            AppIconCache.getCached(applicationInfo, sizePx)
+                ?.let(AppIconState::Loaded) ?: AppIconState.Loading
+        )
+    }
+
+    LaunchedEffect(applicationInfo, sizePx) {
+        // Always resolve for the current key: a remembered Loaded bitmap may belong to an older
+        // application info (updated app) or to another size.
+        val cached = AppIconCache.getCached(applicationInfo, sizePx)
+        state.value = if (cached != null) {
+            AppIconState.Loaded(cached)
+        } else {
+            withContext(Dispatchers.IO) {
                 runCatching { AppIconCache.loadIcon(context, applicationInfo, sizePx) }.getOrNull()
             }?.let(AppIconState::Loaded) ?: AppIconState.Missing
         }
     }
-    return state
+    return state.value
 }
 
 @Composable
