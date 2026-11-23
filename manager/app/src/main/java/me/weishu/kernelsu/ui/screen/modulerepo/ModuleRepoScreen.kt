@@ -265,20 +265,44 @@ private fun loadRegistryIcon(url: String): ImageBitmap? {
     }.getOrNull()?.also { iconCache.put(url, it) }
 }
 
-/** Module icon from the registry (raster formats only); renders nothing until/unless it loads. */
+private sealed interface RegistryIconState {
+    data object Loading : RegistryIconState
+    data object Missing : RegistryIconState
+    data class Loaded(val bitmap: ImageBitmap) : RegistryIconState
+}
+
+/**
+ * Module icon from the registry (raster formats only). Renders nothing while it loads and renders
+ * [fallback] when there is no icon to show, so a caller can offer its own icon for the module.
+ */
 @Composable
-fun RepoModuleIcon(url: String?, modifier: Modifier = Modifier, size: Dp = 24.dp) {
-    if (url == null) return
-    val bitmap by produceState(iconCache.get(url), url) {
-        if (value == null) value = withContext(Dispatchers.IO) { loadRegistryIcon(url) }
+fun RepoModuleIcon(
+    url: String?,
+    modifier: Modifier = Modifier,
+    size: Dp = 24.dp,
+    fallback: (@Composable () -> Unit)? = null,
+) {
+    val state by produceState<RegistryIconState>(
+        initialValue = when {
+            url == null -> RegistryIconState.Missing
+            else -> iconCache.get(url)?.let(RegistryIconState::Loaded) ?: RegistryIconState.Loading
+        },
+        url,
+    ) {
+        if (url != null && value !is RegistryIconState.Loaded) {
+            value = withContext(Dispatchers.IO) { loadRegistryIcon(url) }
+                ?.let(RegistryIconState::Loaded) ?: RegistryIconState.Missing
+        }
     }
-    bitmap?.let {
-        Image(
-            bitmap = it,
+    when (val icon = state) {
+        is RegistryIconState.Loaded -> Image(
+            bitmap = icon.bitmap,
             contentDescription = null,
             modifier = modifier
                 .size(size)
                 .clip(RoundedCornerShape(6.dp)),
         )
+        RegistryIconState.Missing -> fallback?.invoke()
+        RegistryIconState.Loading -> Unit
     }
 }
