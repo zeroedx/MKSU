@@ -244,6 +244,7 @@ jobs:
               -PMKSU_CERT_SHA256="$MKSU_CERT_SHA256"
           fi
 
+      # Repack input; on main it is removed again by cleanup-apk-artifacts so main keeps no downloadable APK.
       - name: Upload build artifact
         if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
@@ -263,7 +264,8 @@ jobs:
     if: always() && needs.build-manager.result == 'success' && needs.build-ksud.result == 'success' && needs.generate-key.result == 'success'
     runs-on: ubuntu-latest
     env:
-      MANAGER_ARCH: ${{ inputs.manager_arch || 'arm64-v8a,x86_64' }}
+      # main ships one arm64-v8a build to Telegram; dev/PR keep the dual-ABI test package.
+      MANAGER_ARCH: ${{ inputs.manager_arch || (github.ref == 'refs/heads/main' && 'arm64-v8a' || 'arm64-v8a,x86_64') }}
 
     steps:
       - name: Checkout
@@ -273,11 +275,29 @@ jobs:
 
       - name: Setup need_upload
         id: need_upload
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
         run: |
-          if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-            echo "UPLOAD=true" >> $GITHUB_OUTPUT
+          reason=""
+          if [ "$EVENT_NAME" != "push" ]; then
+            reason="event '$EVENT_NAME' is not a push"
+          elif [ "$REF" != "refs/heads/main" ]; then
+            reason="ref '$REF' is not refs/heads/main"
+          elif [ -z "$BOT_TOKEN" ]; then
+            reason="secret BOT_TOKEN is not set"
+          elif [ -z "$CHAT_ID" ]; then
+            reason="secret CHAT_ID is not set"
+          fi
+
+          if [ -n "$reason" ]; then
+            echo "UPLOAD=false" >> "$GITHUB_OUTPUT"
+            echo "[=] Telegram upload skipped: $reason"
           else
-            echo "UPLOAD=false" >> $GITHUB_OUTPUT
+            echo "UPLOAD=true" >> "$GITHUB_OUTPUT"
+            echo "[+] Telegram upload enabled: push to main with both secrets present"
           fi
 
       - name: Download gradle manager artifact
@@ -368,27 +388,119 @@ jobs:
             -S "$SIGN_KEY_PASSWORD" \
             --strip
 
+      # dev/PR/tag keep the test package; main ships through Telegram only.
       - name: Upload build artifact
-        if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) || github.ref_type == 'tag' }}
+        if: ${{ github.event_name == 'pull_request' || (github.event_name != 'pull_request' && github.ref == 'refs/heads/dev') || github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
         with:
           name: manager
           path: dist/*.apk
 
       - name: Upload to telegram
-        if: github.event_name != 'pull_request' && steps.need_upload.outputs.UPLOAD == 'true'
+        id: telegram
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.need_upload.outputs.UPLOAD == 'true'
         env:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-          GITHUB_EVENT: ${{ toJson(github.event) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TITLE: Manager
+          COMPARE_URL: ${{ github.event.compare }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          TITLE: MKSU Manager
           BRANCH: ${{ github.ref_name }}
         run: |
-          if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-            export VERSION=$(git rev-list --count HEAD)
-            APK=$(find ./dist -name "*.apk")
-            pip3 install telethon
-            python3 $GITHUB_WORKSPACE/scripts/ksubot.py $APK
+          set -u
+
+          APK=$(find ./dist -maxdepth 1 -type f -name "*.apk" | sort | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "[-] Telegram upload failed: no signed APK in dist/"
+            exit 1
           fi
+
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+
+          read_version_code() {
+            local apk="$1" tool bin code
+            for tool in aapt2 aapt; do
+              bin=$(command -v "$tool" || true)
+              if [ -z "$bin" ]; then
+                for candidate in "$SDK_ROOT"/build-tools/*/"$tool"; do
+                  if [ -x "$candidate" ]; then
+                    bin="$candidate"
+                  fi
+                done
+              fi
+              if [ -n "$bin" ]; then
+                code=$("$bin" dump badging "$apk" 2>/dev/null | sed -n "s/.*versionCode='\([0-9][0-9]*\)'.*/\1/p" | head -n 1 || true)
+                if [ -n "$code" ]; then
+                  printf '%s' "$code"
+                  return 0
+                fi
+              fi
+            done
+            return 1
+          }
+
+          VERSION=$(read_version_code "$APK" || true)
+          if [ -z "$VERSION" ]; then
+            # The repacked APK keeps the Gradle archive name, which ends with the versionCode.
+            VERSION=$(basename "$APK" .apk | sed -n 's/.*_\([0-9][0-9]*\)\(-[A-Za-z0-9._]*\)\{0,1\}$/\1/p')
+            if [ -n "$VERSION" ]; then
+              echo "[!] Could not read versionCode with aapt2/aapt; using the APK file name: $VERSION"
+            fi
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "[-] Telegram upload failed: cannot read versionCode from $APK"
+            exit 1
+          fi
+
+          echo "[+] Uploading $(basename "$APK") (versionCode $VERSION, arch $MANAGER_ARCH) to $CHAT_ID"
+          export VERSION
+
+          if ! python3 -m pip install --quiet telethon; then
+            echo "[-] Telegram upload failed: cannot install telethon"
+            exit 1
+          fi
+
+          if python3 "$GITHUB_WORKSPACE/scripts/ksubot.py" "$APK"; then
+            echo "[+] Telegram upload succeeded"
+          else
+            echo "[-] Telegram upload failed"
+            exit 1
+          fi
+
+  cleanup-apk-artifacts:
+    needs: [repack-manager]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete APK artifacts of this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          list_apk_artifacts() {
+            gh api --paginate --slurp "/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+              --jq '.[].artifacts[] | select(.name == "manager-gradle" or .name == "manager") | "\(.id) \(.name)"'
+          }
+
+          list_apk_artifacts > "$RUNNER_TEMP/apk-artifacts.txt"
+          if [ ! -s "$RUNNER_TEMP/apk-artifacts.txt" ]; then
+            echo "No APK artifacts to delete"
+          else
+            while read -r id name; do
+              echo "Deleting artifact $name ($id)"
+              gh api -X DELETE "/repos/$REPO/actions/artifacts/$id"
+            done < "$RUNNER_TEMP/apk-artifacts.txt"
+          fi
+
+          remaining=$(list_apk_artifacts | wc -l)
+          if [ "$remaining" -ne 0 ]; then
+            echo "::error::$remaining APK artifact(s) still downloadable for this run"
+            exit 1
+          fi
+          echo "No APK artifacts remain for this run"
